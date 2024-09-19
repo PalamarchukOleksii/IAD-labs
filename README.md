@@ -1,7 +1,3 @@
-Here's the updated README with the deactivation instructions integrated:
-
----
-
 # **Instructions on How to Use the Project**
 
 1. **Clone the repository:**
@@ -61,5 +57,3 @@ Here's the updated README with the deactivation instructions integrated:
      ```bash
      deactivate
      ```
-
----
