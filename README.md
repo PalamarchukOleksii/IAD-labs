@@ -1,4 +1,4 @@
-**Instructions on how to use the project:**
+# **Instructions on how to use the project:**
 
 1. **Clone the repository:**
    ```bash
