@@ -202,17 +202,17 @@ def visualize_categorical_data(dataframe, target_column='class', save_path='plot
 # Load dataset with appropriate columns and target feature
 # Dataset: Agaricus Lepiota (Mushroom Classification)
 # Columns include features related to mushroom characteristics and the target variable 'class' indicating the class of the mushroom.
-cols = [
-    'class', 'cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor',
-    'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color',
-    'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
-    'stalk-surface-below-ring', 'stalk-color-above-ring',
-    'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number',
-    'ring-type', 'spore-print-color', 'population', 'habitat'
-]
-df = pd.read_csv('datasets/agaricus-lepiota.data', names=cols)
-target_feature = 'class'
-
+# cols = [
+#     'class', 'cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor',
+#     'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color',
+#     'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
+#     'stalk-surface-below-ring', 'stalk-color-above-ring',
+#     'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number',
+#     'ring-type', 'spore-print-color', 'population', 'habitat'
+# ]
+# df = pd.read_csv('datasets/agaricus-lepiota.data', names=cols)
+# target_feature = 'class'
+#
 # Dataset: House Votes 1984
 # Columns represent votes on various political issues and the target variable 'class' indicates the political party affiliation.
 cols = [
@@ -225,63 +225,63 @@ cols = [
 ]
 df = pd.read_csv('datasets/house-votes-84.data', names=cols)
 target_feature = 'class'
-
-# Dataset: Connect-4 (Game Data)
-# Columns represent various features of game positions in Connect-4, and the target variable 'class' indicates the game outcome.
-cols = [
-    'a1', 'a2', 'a3', 'a4', 'a5', 'a6',
-    'b1', 'b2', 'b3', 'b4', 'b5', 'b6',
-    'c1', 'c2', 'c3', 'c4', 'c5', 'c6',
-    'd1', 'd2', 'd3', 'd4', 'd5', 'd6',
-    'e1', 'e2', 'e3', 'e4', 'e5', 'e6',
-    'f1', 'f2', 'f3', 'f4', 'f5', 'f6',
-    'g1', 'g2', 'g3', 'g4', 'g5', 'g6',
-    'class'
-]
-df = pd.read_csv('datasets/connect-4.data', names=cols)
-target_feature = 'class'
-
-# Dataset: Nursery (Educational Data)
-# Columns represent various features related to nursery education and the target variable 'class' indicates the class of the nursery.
-cols = [
-    'parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class'
-]
-df = pd.read_csv('datasets/nursery.data', names=cols)
-target_feature = 'class'
-
-# Dataset: KR vs KP (Bank Marketing Data)
-# Columns represent various features related to banking products and the target variable 'wtoeg' indicates a specific attribute related to customer behavior.
-cols = [
-    'bkblk', 'bknwy', 'bkon8', 'bkona', 'bkspr', 'bkxbq', 'bkxcr', 'bkxwp', 'blxwp', 'bxqsq',
-    'cntxt', 'dsopp', 'dwipd', 'hdchk', 'katri', 'mulch', 'qxmsq', 'r2ar8', 'reskd', 'reskr',
-    'rimmx', 'rkxwp', 'rxmsq', 'simpl', 'skach', 'skewr', 'skrxp', 'spcop', 'stlmt', 'thrsk',
-    'wkcti', 'wkna8', 'wknck', 'wkovl', 'wkpos', 'wtoeg'
-]
-df = pd.read_csv('datasets/kr-vs-kp.data', names=cols)
-target_feature = 'wtoeg'
-
-# Dataset: Breast Cancer (Medical Data)
-# Columns represent various medical features related to breast cancer diagnosis and the target variable 'class' indicates the cancer diagnosis class.
-cols = [
-    'class', 'age', 'menopause', 'tumor-size', 'inv-nodes', 'node-caps',
-    'deg-malig', 'breast', 'breast-quad', 'irradiat'
-]
-df = pd.read_csv('datasets/breast-cancer.data', names=cols)
-target_feature = 'class'
-
-# Dataset: Soybean Large (Agricultural Data)
-# Columns represent various features related to soybean crop attributes and the target variable 'class' indicates the soybean disease classification.
-cols = [
-    'class',
-    'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',
-    'severity', 'seed-tmt', 'germination', 'plant-growth', 'leaves', 'leafspots-halo',
-    'leafspots-marg', 'leafspot-size', 'leaf-shread', 'leaf-malf', 'leaf-mild', 'stem',
-    'lodging', 'stem-cankers', 'canker-lesion', 'fruiting-bodies', 'external-decay',
-    'mycelium', 'int-discolor', 'sclerotia', 'fruit-pods', 'fruit-spots', 'seed',
-    'mold-growth', 'seed-discolor', 'seed-size', 'shriveling', 'roots'
-]
-df = pd.read_csv('datasets/soybean-large.data', names=cols)
-target_feature = 'class'
+#
+# # Dataset: Connect-4 (Game Data)
+# # Columns represent various features of game positions in Connect-4, and the target variable 'class' indicates the game outcome.
+# cols = [
+#     'a1', 'a2', 'a3', 'a4', 'a5', 'a6',
+#     'b1', 'b2', 'b3', 'b4', 'b5', 'b6',
+#     'c1', 'c2', 'c3', 'c4', 'c5', 'c6',
+#     'd1', 'd2', 'd3', 'd4', 'd5', 'd6',
+#     'e1', 'e2', 'e3', 'e4', 'e5', 'e6',
+#     'f1', 'f2', 'f3', 'f4', 'f5', 'f6',
+#     'g1', 'g2', 'g3', 'g4', 'g5', 'g6',
+#     'class'
+# ]
+# df = pd.read_csv('datasets/connect-4.data', names=cols)
+# target_feature = 'class'
+#
+# # Dataset: Nursery (Educational Data)
+# # Columns represent various features related to nursery education and the target variable 'class' indicates the class of the nursery.
+# cols = [
+#     'parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class'
+# ]
+# df = pd.read_csv('datasets/nursery.data', names=cols)
+# target_feature = 'class'
+#
+# # Dataset: KR vs KP (Bank Marketing Data)
+# # Columns represent various features related to banking products and the target variable 'wtoeg' indicates a specific attribute related to customer behavior.
+# cols = [
+#     'bkblk', 'bknwy', 'bkon8', 'bkona', 'bkspr', 'bkxbq', 'bkxcr', 'bkxwp', 'blxwp', 'bxqsq',
+#     'cntxt', 'dsopp', 'dwipd', 'hdchk', 'katri', 'mulch', 'qxmsq', 'r2ar8', 'reskd', 'reskr',
+#     'rimmx', 'rkxwp', 'rxmsq', 'simpl', 'skach', 'skewr', 'skrxp', 'spcop', 'stlmt', 'thrsk',
+#     'wkcti', 'wkna8', 'wknck', 'wkovl', 'wkpos', 'wtoeg'
+# ]
+# df = pd.read_csv('datasets/kr-vs-kp.data', names=cols)
+# target_feature = 'wtoeg'
+#
+# # Dataset: Breast Cancer (Medical Data)
+# # Columns represent various medical features related to breast cancer diagnosis and the target variable 'class' indicates the cancer diagnosis class.
+# cols = [
+#     'class', 'age', 'menopause', 'tumor-size', 'inv-nodes', 'node-caps',
+#     'deg-malig', 'breast', 'breast-quad', 'irradiat'
+# ]
+# df = pd.read_csv('datasets/breast-cancer.data', names=cols)
+# target_feature = 'class'
+#
+# # Dataset: Soybean Large (Agricultural Data)
+# # Columns represent various features related to soybean crop attributes and the target variable 'class' indicates the soybean disease classification.
+# cols = [
+#     'class',
+#     'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',
+#     'severity', 'seed-tmt', 'germination', 'plant-growth', 'leaves', 'leafspots-halo',
+#     'leafspots-marg', 'leafspot-size', 'leaf-shread', 'leaf-malf', 'leaf-mild', 'stem',
+#     'lodging', 'stem-cankers', 'canker-lesion', 'fruiting-bodies', 'external-decay',
+#     'mycelium', 'int-discolor', 'sclerotia', 'fruit-pods', 'fruit-spots', 'seed',
+#     'mold-growth', 'seed-discolor', 'seed-size', 'shriveling', 'roots'
+# ]
+# df = pd.read_csv('datasets/soybean-large.data', names=cols)
+# target_feature = 'class'
 
 # Visualize categorical data by creating count plots for each feature, excluding the target column
 visualize_categorical_data(df, target_column=target_feature)
