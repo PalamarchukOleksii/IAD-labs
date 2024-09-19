@@ -84,7 +84,7 @@ def separate_dataset(dataframe, target):
     return x, y
 
 
-def visualize_categorical_data(dataframe, hue_column=None, save_path='plots'):
+def visualize_categorical_data(dataframe, hue_column=None, save_path='plots', show_plot=False):
     if os.path.exists(save_path):
         shutil.rmtree(save_path)
     os.makedirs(save_path)
@@ -94,7 +94,7 @@ def visualize_categorical_data(dataframe, hue_column=None, save_path='plots'):
             continue
 
         plt.figure(figsize=(8, 6))
-        sns.countplot(x=col, hue=hue_column, data=df)
+        sns.countplot(x=col, hue=hue_column, data=dataframe)
         plt.title(col.replace('-', ' ').title())
         plt.xlabel('')
         plt.ylabel('Count')
@@ -102,7 +102,11 @@ def visualize_categorical_data(dataframe, hue_column=None, save_path='plots'):
 
         filename = f"{save_path}/{col.replace(' ', '_').replace('-', '_')}.png"
         plt.savefig(filename)
+
+        if show_plot:
+            plt.show()
         plt.close()
+
 
 
 # cols = [
@@ -127,7 +131,6 @@ cols = [
 ]
 
 df = pd.read_csv('datasets/house-votes-84.data', names=cols)
-
 target_feature = 'class'
 #
 # cols = [
@@ -166,7 +169,7 @@ target_feature = 'class'
 #
 # df = pd.read_csv('datasets/breast-cancer.data', names=cols)
 # target_feature = 'class'
-
+#
 # cols = [
 #     'class',
 #     'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',

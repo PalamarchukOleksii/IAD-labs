@@ -60,7 +60,8 @@ def create_test_examples(dataframe, target):
 #     'ring-type', 'spore-print-color', 'population', 'habitat'
 # ]
 #
-# df = pd.read_csv('mushroom/agaricus-lepiota.data', names=cols)
+# df = pd.read_csv('datasets/agaricus-lepiota.data', names=cols)
+# target_feature = 'class'
 #
 cols = [
     'class', 'handicapped-infants', 'water-project-cost-sharing',
@@ -85,7 +86,14 @@ target_feature = 'class'
 #     'class'
 # ]
 #
-# df = pd.read_csv('connect-4.data', names=cols)
+# df = pd.read_csv('datasets/connect-4.data', names=cols)
+# target_feature = 'class'
+#
+# cols = [
+#     'parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class'
+# ]
+#
+# df = pd.read_csv('datasets/nursery.data', names=cols)
 # target_feature = 'class'
 #
 # cols = [
@@ -95,7 +103,26 @@ target_feature = 'class'
 #     'wkcti', 'wkna8', 'wknck', 'wkovl', 'wkpos', 'wtoeg'
 # ]
 #
-# df = pd.read_csv('kr-vs-kp.data', names=cols)
+# df = pd.read_csv('datasets/kr-vs-kp.data', names=cols)
+# target_feature = 'wtoeg'
+#
+# cols = ['class', 'age', 'menopause', 'tumor-size', 'inv-nodes', 'node-caps',
+#         'deg-malig', 'breast', 'breast-quad', 'irradiat']
+#
+# df = pd.read_csv('datasets/breast-cancer.data', names=cols)
+# target_feature = 'class'
+#
+# cols = [
+#     'class',
+#     'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',
+#     'severity', 'seed-tmt', 'germination', 'plant-growth', 'leaves', 'leafspots-halo',
+#     'leafspots-marg', 'leafspot-size', 'leaf-shread', 'leaf-malf', 'leaf-mild', 'stem',
+#     'lodging', 'stem-cankers', 'canker-lesion', 'fruiting-bodies', 'external-decay',
+#     'mycelium', 'int-discolor', 'sclerotia', 'fruit-pods', 'fruit-spots', 'seed',
+#     'mold-growth', 'seed-discolor', 'seed-size', 'shriveling', 'roots'
+# ]
+#
+# df = pd.read_csv('datasets/soybean-large.data', names=cols)
 # target_feature = 'class'
 
 train, test = np.split(df.sample(frac=1, random_state=42), [int(0.7 * len(df))])
