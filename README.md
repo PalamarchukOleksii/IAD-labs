@@ -50,6 +50,11 @@
    ```bash
    jupyter notebook
    ```
+   
+   Jupyter Lab is also supported and can be started using:
+   ```bash
+   jupyter lab
+   ```
 
 9. **Deactivate the virtual environment when done:**
 
