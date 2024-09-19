@@ -1,20 +1,24 @@
-# **Instructions on how to use the project:**
+Here's the updated README with the deactivation instructions integrated:
+
+---
+
+# **Instructions on How to Use the Project**
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/PalamarchukOleksii/IAD-labs.git
    ```
-   
+
 2. **Navigate to the project directory:**
    ```bash
    cd IAD-labs
    ```
-   
+
 3. **Create a virtual environment:**
    ```bash
    python -m venv .venv
    ```
-   
+
 4. **Activate the virtual environment:**
 
    - On **Windows**:
@@ -25,7 +29,7 @@
      ```bash
      source .venv/bin/activate
      ```
-   
+
 5. **Install the required dependencies:**
    ```bash
    pip install -r lab1/requirements.txt
@@ -50,3 +54,12 @@
    ```bash
    jupyter notebook
    ```
+
+9. **Deactivate the virtual environment when done:**
+
+   - On **Windows, macOS, and Linux**:
+     ```bash
+     deactivate
+     ```
+
+---
