@@ -1,11 +1,13 @@
 import os
-import shutil
-
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn.metrics import classification_report
+from sklearn.naive_bayes import CategoricalNB
+from sklearn.preprocessing import OrdinalEncoder
+
+TRAIN_SPLIT_RATIO = 0.7
 
 
 class NaiveBayes:
@@ -103,14 +105,9 @@ class NaiveBayes:
         Returns:
             dict: Dictionary where keys are class labels and values are the probabilities.
         """
-        prob = {}
-        total_count = len(self.dataframe)  # Total number of samples
 
-        # Calculate probability of each class
-        for cls in self.classes:
-            prob[cls] = len(self.dataframe[self.dataframe[self.target] == cls]) / total_count
-
-        return prob
+        total_count = len(self.dataframe)
+        return (self.dataframe[self.target].value_counts() / total_count).to_dict()
 
     def __calc_features_prob_in_class_with_value(self):
         """
@@ -121,20 +118,13 @@ class NaiveBayes:
                   the inner keys are feature values, and the innermost keys are class labels.
         """
         prob = {}
-
         for feature in self.feature_columns:
-            prob[feature] = {}
+            feature_prob = {}
             for value in self.dataframe[feature].unique():
-                prob[feature][value] = {}
-                for cls in self.classes:
-                    # Count occurrences of the feature value in the class
-                    count_of_feature_in_class_with_value = len(
-                        self.dataframe[(self.dataframe[self.target] == cls) & (self.dataframe[feature] == value)])
-                    count_of_feature_in_class = len(self.dataframe[self.dataframe[self.target] == cls])
-
-                    # Calculate conditional probability
-                    prob[feature][value][cls] = count_of_feature_in_class_with_value / count_of_feature_in_class
-
+                class_counts = self.dataframe[self.dataframe[feature] == value].groupby(self.target).size()
+                total_class_counts = self.dataframe.groupby(self.target).size()
+                feature_prob[value] = (class_counts / total_class_counts).fillna(0).to_dict()
+                prob[feature] = feature_prob
         return prob
 
 
@@ -168,10 +158,8 @@ def visualize_categorical_data(dataframe, target_column='class', save_path='plot
         save_plots (bool): Whether to save the plots to files.
     """
     # Create the directory to save plots if it doesn't exist
-    if save_plots:
-        if os.path.exists(save_path):
-            shutil.rmtree(save_path)  # Remove the directory if it already exists
-        os.makedirs(save_path)  # Create the directory
+    if save_plots and not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     # Generate and save plots for each feature except the target column
     for i, col in enumerate(dataframe.columns):
@@ -194,6 +182,19 @@ def visualize_categorical_data(dataframe, target_column='class', save_path='plot
         if show_plot:
             plt.show()  # Show the plot
         plt.close()  # Close the plot to free memory
+
+
+def preprocess_data(x_tr, x_tst):
+    # Fill NAN values with forward fill
+    x_tr = pd.DataFrame(x_tr).ffill(axis=0)
+    x_tst = pd.DataFrame(x_tst).ffill(axis=0)
+
+    # Create data encoder
+    enc = OrdinalEncoder()
+    enc.fit(x_tr)
+    x_tr = enc.transform(x_tr)
+    x_tst = enc.transform(x_tst)
+    return x_tr, x_tst
 
 
 # Example Usage
@@ -223,94 +224,104 @@ cols = [
     'synfuels-corporation-cutback', 'education-spending', 'superfund-right-to-sue',
     'crime', 'duty-free-exports', 'export-administration-act-south-africa'
 ]
-df = pd.read_csv('datasets/house-votes-84.data', names=cols)
-target_feature = 'class'
-#
-# # Dataset: Connect-4 (Game Data)
-# # Columns represent various features of game positions in Connect-4, and the target variable 'class' indicates the game outcome.
-# cols = [
-#     'a1', 'a2', 'a3', 'a4', 'a5', 'a6',
-#     'b1', 'b2', 'b3', 'b4', 'b5', 'b6',
-#     'c1', 'c2', 'c3', 'c4', 'c5', 'c6',
-#     'd1', 'd2', 'd3', 'd4', 'd5', 'd6',
-#     'e1', 'e2', 'e3', 'e4', 'e5', 'e6',
-#     'f1', 'f2', 'f3', 'f4', 'f5', 'f6',
-#     'g1', 'g2', 'g3', 'g4', 'g5', 'g6',
-#     'class'
-# ]
-# df = pd.read_csv('datasets/connect-4.data', names=cols)
-# target_feature = 'class'
-#
-# # Dataset: Nursery (Educational Data)
-# # Columns represent various features related to nursery education and the target variable 'class' indicates the class of the nursery.
-# cols = [
-#     'parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class'
-# ]
-# df = pd.read_csv('datasets/nursery.data', names=cols)
-# target_feature = 'class'
-#
-# # Dataset: KR vs KP (Bank Marketing Data)
-# # Columns represent various features related to banking products and the target variable 'wtoeg' indicates a specific attribute related to customer behavior.
-# cols = [
-#     'bkblk', 'bknwy', 'bkon8', 'bkona', 'bkspr', 'bkxbq', 'bkxcr', 'bkxwp', 'blxwp', 'bxqsq',
-#     'cntxt', 'dsopp', 'dwipd', 'hdchk', 'katri', 'mulch', 'qxmsq', 'r2ar8', 'reskd', 'reskr',
-#     'rimmx', 'rkxwp', 'rxmsq', 'simpl', 'skach', 'skewr', 'skrxp', 'spcop', 'stlmt', 'thrsk',
-#     'wkcti', 'wkna8', 'wknck', 'wkovl', 'wkpos', 'wtoeg'
-# ]
-# df = pd.read_csv('datasets/kr-vs-kp.data', names=cols)
-# target_feature = 'wtoeg'
-#
-# # Dataset: Breast Cancer (Medical Data)
-# # Columns represent various medical features related to breast cancer diagnosis and the target variable 'class' indicates the cancer diagnosis class.
-# cols = [
-#     'class', 'age', 'menopause', 'tumor-size', 'inv-nodes', 'node-caps',
-#     'deg-malig', 'breast', 'breast-quad', 'irradiat'
-# ]
-# df = pd.read_csv('datasets/breast-cancer.data', names=cols)
-# target_feature = 'class'
-#
-# # Dataset: Soybean Large (Agricultural Data)
-# # Columns represent various features related to soybean crop attributes and the target variable 'class' indicates the soybean disease classification.
-# cols = [
-#     'class',
-#     'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',
-#     'severity', 'seed-tmt', 'germination', 'plant-growth', 'leaves', 'leafspots-halo',
-#     'leafspots-marg', 'leafspot-size', 'leaf-shread', 'leaf-malf', 'leaf-mild', 'stem',
-#     'lodging', 'stem-cankers', 'canker-lesion', 'fruiting-bodies', 'external-decay',
-#     'mycelium', 'int-discolor', 'sclerotia', 'fruit-pods', 'fruit-spots', 'seed',
-#     'mold-growth', 'seed-discolor', 'seed-size', 'shriveling', 'roots'
-# ]
-# df = pd.read_csv('datasets/soybean-large.data', names=cols)
-# target_feature = 'class'
+if __name__ == "__main__":
+    df = pd.read_csv('datasets/house-votes-84.data', names=cols)
+    target_feature = 'class'
+    #
+    # # Dataset: Connect-4 (Game Data)
+    # # Columns represent various features of game positions in Connect-4, and the target variable 'class' indicates the game outcome.
+    # cols = [
+    #     'a1', 'a2', 'a3', 'a4', 'a5', 'a6',
+    #     'b1', 'b2', 'b3', 'b4', 'b5', 'b6',
+    #     'c1', 'c2', 'c3', 'c4', 'c5', 'c6',
+    #     'd1', 'd2', 'd3', 'd4', 'd5', 'd6',
+    #     'e1', 'e2', 'e3', 'e4', 'e5', 'e6',
+    #     'f1', 'f2', 'f3', 'f4', 'f5', 'f6',
+    #     'g1', 'g2', 'g3', 'g4', 'g5', 'g6',
+    #     'class'
+    # ]
+    # df = pd.read_csv('datasets/connect-4.data', names=cols)
+    # target_feature = 'class'
+    #
+    # # Dataset: Nursery (Educational Data)
+    # # Columns represent various features related to nursery education and the target variable 'class' indicates the class of the nursery.
+    # cols = [
+    #     'parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class'
+    # ]
+    # df = pd.read_csv('datasets/nursery.data', names=cols)
+    # target_feature = 'class'
+    #
+    # # Dataset: KR vs KP (Bank Marketing Data)
+    # # Columns represent various features related to banking products and the target variable 'wtoeg' indicates a specific attribute related to customer behavior.
+    # cols = [
+    #     'bkblk', 'bknwy', 'bkon8', 'bkona', 'bkspr', 'bkxbq', 'bkxcr', 'bkxwp', 'blxwp', 'bxqsq',
+    #     'cntxt', 'dsopp', 'dwipd', 'hdchk', 'katri', 'mulch', 'qxmsq', 'r2ar8', 'reskd', 'reskr',
+    #     'rimmx', 'rkxwp', 'rxmsq', 'simpl', 'skach', 'skewr', 'skrxp', 'spcop', 'stlmt', 'thrsk',
+    #     'wkcti', 'wkna8', 'wknck', 'wkovl', 'wkpos', 'wtoeg'
+    # ]
+    # df = pd.read_csv('datasets/kr-vs-kp.data', names=cols)
+    # target_feature = 'wtoeg'
+    #
+    # # Dataset: Breast Cancer (Medical Data)
+    # # Columns represent various medical features related to breast cancer diagnosis and the target variable 'class' indicates the cancer diagnosis class.
+    # cols = [
+    #     'class', 'age', 'menopause', 'tumor-size', 'inv-nodes', 'node-caps',
+    #     'deg-malig', 'breast', 'breast-quad', 'irradiat'
+    # ]
+    # df = pd.read_csv('datasets/breast-cancer.data', names=cols)
+    # target_feature = 'class'
+    #
+    # # Dataset: Soybean Large (Agricultural Data)
+    # # Columns represent various features related to soybean crop attributes and the target variable 'class' indicates the soybean disease classification.
+    # cols = [
+    #     'class',
+    #     'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',
+    #     'severity', 'seed-tmt', 'germination', 'plant-growth', 'leaves', 'leafspots-halo',
+    #     'leafspots-marg', 'leafspot-size', 'leaf-shread', 'leaf-malf', 'leaf-mild', 'stem',
+    #     'lodging', 'stem-cankers', 'canker-lesion', 'fruiting-bodies', 'external-decay',
+    #     'mycelium', 'int-discolor', 'sclerotia', 'fruit-pods', 'fruit-spots', 'seed',
+    #     'mold-growth', 'seed-discolor', 'seed-size', 'shriveling', 'roots'
+    # ]
+    # df = pd.read_csv('datasets/soybean-large.data', names=cols)
+    # target_feature = 'class'
 
-# Visualize categorical data by creating count plots for each feature, excluding the target column
-visualize_categorical_data(df, target_column=target_feature)
+    # Visualize categorical data by creating count plots for each feature, excluding the target column
+    # visualize_categorical_data(df, target_column=target_feature)
 
-# Replace missing values marked as '?' with NaN
-df = df.replace('?', pd.NA)
+    # Replace missing values marked as '?' with NaN
+    df = df.replace('?', pd.NA)
 
-# Forward fill missing values (propagate previous values forward)
-df = df.ffill(axis=0)
+    # Forward fill missing values (propagate previous values forward)
+    df = df.ffill(axis=0)
 
-# Shuffle the dataframe and split it into training and test sets
-# 70% of the data is used for training, and 30% for testing
-train, test = np.split(df.sample(frac=1, random_state=42), [int(0.7 * len(df))])
+    # Shuffle the dataframe and split it into training and test sets
+    # 70% of the data is used for training, and 30% for testing
+    train, test = np.split(df.sample(frac=1, random_state=42), [int(TRAIN_SPLIT_RATIO * len(df))])
 
-# Convert the split data back into DataFrames with the original columns
-train = pd.DataFrame(train, columns=cols)
-test = pd.DataFrame(test, columns=cols)
+    # Convert the split data back into DataFrames with the original columns
+    train = pd.DataFrame(train, columns=cols)
+    test = pd.DataFrame(test, columns=cols)
 
-# Initialize the Naive Bayes classifier
-model = NaiveBayes()
+    # Initialize the Naive Bayes classifiers
+    custom_model = NaiveBayes()
+    cnb_model = CategoricalNB()
+    # Fit the model on the training data
+    custom_model.fit(train, target_feature)
 
-# Fit the model on the training data
-model.fit(train, target_feature)
+    # Separate the test dataframe into features and target
+    X_test, y_test = separate_dataset(test, target_feature)
 
-# Separate the test dataframe into features and target
-X_test, y_test = separate_dataset(test, target_feature)
+    # Predict the target values for the test features on custom Naive Bayes
+    y_predictions = custom_model.predict(X_test)
 
-# Predict the target values for the test features
-y_predictions = model.predict(X_test)
+    # Print the classification report showing precision, recall, f1-score, and support
+    print(classification_report(y_test, y_predictions))
 
-# Print the classification report showing precision, recall, f1-score, and support
-print(classification_report(y_test, y_predictions))
+    # Prepare dataframes for training CategoricalNB model
+    X_train, Y_train = separate_dataset(train, target_feature)
+    X_train, X_test = preprocess_data(X_train, X_test)
+
+    # Predict the target values for the test features on sklearn.Categorical Naive Bayes
+    y_predictions = cnb_model.fit(X_train, Y_train).predict(X_test)
+    # Print the classification report showing precision, recall, f1-score, and support
+    print(classification_report(y_test, y_predictions))
