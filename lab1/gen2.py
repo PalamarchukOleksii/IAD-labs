@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -106,7 +108,10 @@ class NaiveBayes:
             dict: Dictionary where keys are class labels and values are the probabilities.
         """
 
+        # Calculate the total number of rows in the dataframe
         total_count = len(self.dataframe)
+
+        # Return the proportion of each class in the target column as a dictionary
         return (self.dataframe[self.target].value_counts() / total_count).to_dict()
 
     def __calc_features_prob_in_class_with_value(self):
@@ -114,18 +119,24 @@ class NaiveBayes:
         Calculate the probability of each feature value given each class.
 
         Returns:
-            dict: Nested dictionary where the outer keys are feature names,
-                  the inner keys are feature values, and the innermost keys are class labels.
+            dict: Nested dictionary of feature probabilities by class.
         """
-        prob = {}
+        prob = {}  # Initialize probabilities dictionary
+
         for feature in self.feature_columns:
-            feature_prob = {}
+            feature_prob = {}  # Store probabilities for the feature
+
             for value in self.dataframe[feature].unique():
+                # Count class occurrences for the feature value
                 class_counts = self.dataframe[self.dataframe[feature] == value].groupby(self.target).size()
                 total_class_counts = self.dataframe.groupby(self.target).size()
+
+                # Calculate and store probabilities, filling NaN with 0
                 feature_prob[value] = (class_counts / total_class_counts).fillna(0).to_dict()
-                prob[feature] = feature_prob
-        return prob
+
+            prob[feature] = feature_prob  # Add feature probabilities to main dict
+
+        return prob  # Return the nested probability dictionary
 
 
 def separate_dataset(dataframe, target):
@@ -157,9 +168,11 @@ def visualize_categorical_data(dataframe, target_column='class', save_path='plot
         show_plot (bool): Whether to display the plots.
         save_plots (bool): Whether to save the plots to files.
     """
-    # Create the directory to save plots if it doesn't exist
-    if save_plots and not os.path.exists(save_path):
-        os.makedirs(save_path)
+    # Create the directory or clean it if it already exists
+    if save_plots:
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path)  # Remove the directory and its contents
+        os.makedirs(save_path)  # Recreate the directory
 
     # Generate and save plots for each feature except the target column
     for i, col in enumerate(dataframe.columns):
@@ -184,115 +197,75 @@ def visualize_categorical_data(dataframe, target_column='class', save_path='plot
         plt.close()  # Close the plot to free memory
 
 
+def prepare_missing_data(dataframe):
+    """
+    Replaces missing values marked as '?' with NaN and handles missing data.
+
+    Args:
+        dataframe (pd.DataFrame): Input DataFrame containing data.
+
+    Returns:
+        pd.DataFrame: DataFrame with missing values handled.
+    """
+    # Replace missing values marked as '?' with pandas' NA (Not Available)
+    dataframe = dataframe.replace('?', pd.NA)
+
+    # Forward fill missing values, propagating previous values forward
+    # This fills missing values with the last valid observation along the column
+    dataframe = dataframe.ffill(axis=0)
+
+    return dataframe
+
+
 def preprocess_data(x_tr, x_tst):
-    # Fill NAN values with forward fill
-    x_tr = pd.DataFrame(x_tr).ffill(axis=0)
-    x_tst = pd.DataFrame(x_tst).ffill(axis=0)
+    """
+    Preprocesses the training and test data by handling missing values and encoding.
+
+    Args:
+        x_tr (array-like): Training data before preprocessing.
+        x_tst (array-like): Test data before preprocessing.
+
+    Returns:
+        tuple: Transformed training and test data after handling missing values and encoding.
+    """
+    # Convert input data to pandas DataFrame for easier manipulation
+    x_tr = pd.DataFrame(x_tr)
+    x_tst = pd.DataFrame(x_tst)
+
+    # Handle missing data in both training and test datasets
+    x_tr = prepare_missing_data(x_tr)
+    x_tst = prepare_missing_data(x_tst)
 
     # Create data encoder
     enc = OrdinalEncoder()
     enc.fit(x_tr)
     x_tr = enc.transform(x_tr)
     x_tst = enc.transform(x_tst)
+
     return x_tr, x_tst
 
 
-# Example Usage
-# Uncomment and adjust the following sections based on the dataset you are using
-
-# Load dataset with appropriate columns and target feature
-# Dataset: Agaricus Lepiota (Mushroom Classification)
-# Columns include features related to mushroom characteristics and the target variable 'class' indicating the class of the mushroom.
-# cols = [
-#     'class', 'cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor',
-#     'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color',
-#     'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
-#     'stalk-surface-below-ring', 'stalk-color-above-ring',
-#     'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number',
-#     'ring-type', 'spore-print-color', 'population', 'habitat'
-# ]
-# df = pd.read_csv('datasets/agaricus-lepiota.data', names=cols)
-# target_feature = 'class'
-#
-# Dataset: House Votes 1984
-# Columns represent votes on various political issues and the target variable 'class' indicates the political party affiliation.
-cols = [
-    'class', 'handicapped-infants', 'water-project-cost-sharing',
-    'adoption-of-the-budget-resolution', 'physician-fee-freeze',
-    'el-salvador-aid', 'religious-groups-in-schools', 'anti-satellite-test-ban',
-    'aid-to-nicaraguan-contras', 'mx-missile', 'immigration',
-    'synfuels-corporation-cutback', 'education-spending', 'superfund-right-to-sue',
-    'crime', 'duty-free-exports', 'export-administration-act-south-africa'
-]
 if __name__ == "__main__":
+    # Example dataset: House Votes 1984
+    # Columns represent votes on various political issues and the target variable 'class' indicates the political party affiliation.
+    cols = [
+        'class', 'handicapped-infants', 'water-project-cost-sharing',
+        'adoption-of-the-budget-resolution', 'physician-fee-freeze',
+        'el-salvador-aid', 'religious-groups-in-schools', 'anti-satellite-test-ban',
+        'aid-to-nicaraguan-contras', 'mx-missile', 'immigration',
+        'synfuels-corporation-cutback', 'education-spending', 'superfund-right-to-sue',
+        'crime', 'duty-free-exports', 'export-administration-act-south-africa'
+    ]
+
+    # Load the dataset
     df = pd.read_csv('datasets/house-votes-84.data', names=cols)
     target_feature = 'class'
-    #
-    # # Dataset: Connect-4 (Game Data)
-    # # Columns represent various features of game positions in Connect-4, and the target variable 'class' indicates the game outcome.
-    # cols = [
-    #     'a1', 'a2', 'a3', 'a4', 'a5', 'a6',
-    #     'b1', 'b2', 'b3', 'b4', 'b5', 'b6',
-    #     'c1', 'c2', 'c3', 'c4', 'c5', 'c6',
-    #     'd1', 'd2', 'd3', 'd4', 'd5', 'd6',
-    #     'e1', 'e2', 'e3', 'e4', 'e5', 'e6',
-    #     'f1', 'f2', 'f3', 'f4', 'f5', 'f6',
-    #     'g1', 'g2', 'g3', 'g4', 'g5', 'g6',
-    #     'class'
-    # ]
-    # df = pd.read_csv('datasets/connect-4.data', names=cols)
-    # target_feature = 'class'
-    #
-    # # Dataset: Nursery (Educational Data)
-    # # Columns represent various features related to nursery education and the target variable 'class' indicates the class of the nursery.
-    # cols = [
-    #     'parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class'
-    # ]
-    # df = pd.read_csv('datasets/nursery.data', names=cols)
-    # target_feature = 'class'
-    #
-    # # Dataset: KR vs KP (Bank Marketing Data)
-    # # Columns represent various features related to banking products and the target variable 'wtoeg' indicates a specific attribute related to customer behavior.
-    # cols = [
-    #     'bkblk', 'bknwy', 'bkon8', 'bkona', 'bkspr', 'bkxbq', 'bkxcr', 'bkxwp', 'blxwp', 'bxqsq',
-    #     'cntxt', 'dsopp', 'dwipd', 'hdchk', 'katri', 'mulch', 'qxmsq', 'r2ar8', 'reskd', 'reskr',
-    #     'rimmx', 'rkxwp', 'rxmsq', 'simpl', 'skach', 'skewr', 'skrxp', 'spcop', 'stlmt', 'thrsk',
-    #     'wkcti', 'wkna8', 'wknck', 'wkovl', 'wkpos', 'wtoeg'
-    # ]
-    # df = pd.read_csv('datasets/kr-vs-kp.data', names=cols)
-    # target_feature = 'wtoeg'
-    #
-    # # Dataset: Breast Cancer (Medical Data)
-    # # Columns represent various medical features related to breast cancer diagnosis and the target variable 'class' indicates the cancer diagnosis class.
-    # cols = [
-    #     'class', 'age', 'menopause', 'tumor-size', 'inv-nodes', 'node-caps',
-    #     'deg-malig', 'breast', 'breast-quad', 'irradiat'
-    # ]
-    # df = pd.read_csv('datasets/breast-cancer.data', names=cols)
-    # target_feature = 'class'
-    #
-    # # Dataset: Soybean Large (Agricultural Data)
-    # # Columns represent various features related to soybean crop attributes and the target variable 'class' indicates the soybean disease classification.
-    # cols = [
-    #     'class',
-    #     'date', 'plant-stand', 'precip', 'temp', 'hail', 'crop-hist', 'area-damaged',
-    #     'severity', 'seed-tmt', 'germination', 'plant-growth', 'leaves', 'leafspots-halo',
-    #     'leafspots-marg', 'leafspot-size', 'leaf-shread', 'leaf-malf', 'leaf-mild', 'stem',
-    #     'lodging', 'stem-cankers', 'canker-lesion', 'fruiting-bodies', 'external-decay',
-    #     'mycelium', 'int-discolor', 'sclerotia', 'fruit-pods', 'fruit-spots', 'seed',
-    #     'mold-growth', 'seed-discolor', 'seed-size', 'shriveling', 'roots'
-    # ]
-    # df = pd.read_csv('datasets/soybean-large.data', names=cols)
-    # target_feature = 'class'
 
     # Visualize categorical data by creating count plots for each feature, excluding the target column
-    # visualize_categorical_data(df, target_column=target_feature)
+    visualize_categorical_data(df, target_column=target_feature)
 
-    # Replace missing values marked as '?' with NaN
-    df = df.replace('?', pd.NA)
-
-    # Forward fill missing values (propagate previous values forward)
-    df = df.ffill(axis=0)
+    # Prepare data for work
+    df = prepare_missing_data(df)
 
     # Shuffle the dataframe and split it into training and test sets
     # 70% of the data is used for training, and 30% for testing
@@ -302,14 +275,14 @@ if __name__ == "__main__":
     train = pd.DataFrame(train, columns=cols)
     test = pd.DataFrame(test, columns=cols)
 
-    # Initialize the Naive Bayes classifiers
+    # Initialize custom Naive Bayes classifier
     custom_model = NaiveBayes()
-    cnb_model = CategoricalNB()
-    # Fit the model on the training data
-    custom_model.fit(train, target_feature)
 
     # Separate the test dataframe into features and target
     X_test, y_test = separate_dataset(test, target_feature)
+
+    # Fit the model on the training data
+    custom_model.fit(train, target_feature)
 
     # Predict the target values for the test features on custom Naive Bayes
     y_predictions = custom_model.predict(X_test)
@@ -317,11 +290,18 @@ if __name__ == "__main__":
     # Print the classification report showing precision, recall, f1-score, and support
     print(classification_report(y_test, y_predictions))
 
+    # Initialize the Naive Bayes classifier
+    cnb_model = CategoricalNB()
+
     # Prepare dataframes for training CategoricalNB model
     X_train, Y_train = separate_dataset(train, target_feature)
     X_train, X_test = preprocess_data(X_train, X_test)
 
+    # Fit the model on the training data
+    cnb_model.fit(X_train, Y_train)
+
     # Predict the target values for the test features on sklearn.Categorical Naive Bayes
-    y_predictions = cnb_model.fit(X_train, Y_train).predict(X_test)
+    y_predictions = cnb_model.predict(X_test)
+
     # Print the classification report showing precision, recall, f1-score, and support
     print(classification_report(y_test, y_predictions))
