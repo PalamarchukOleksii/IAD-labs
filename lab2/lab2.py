@@ -64,6 +64,7 @@ def plot_dataset(dataset_id: int, df: pd.DataFrame):
         plt.show()
 
 
+# TODO: перейменвати метод на отримання границь рішень
 def plot_model(dataset_id, x, y, model, model_name):
     if dataset_id == DATASET_RAND_ID:
         plt.figure(figsize=(8, 6))
@@ -100,6 +101,8 @@ def plot_model(dataset_id, x, y, model, model_name):
         plt.title(f"Decision Boundary on Digits Dataset with {model_name}")
         plt.show()
 
+
+# TODO: add method for plot model https://scikit-learn.org/dev/auto_examples/svm/plot_linearsvc_support_vectors.html#sphx-glr-auto-examples-svm-plot-linearsvc-support-vectors-py
 
 def separate_dataset(dataframe, target):
     # Drop the target column to get the feature columns
@@ -153,7 +156,7 @@ def model_analysis(y_test, y_predict, y_prob):
 
 if __name__ == "__main__":
     dataset_id = DATASET_RAND_ID
-    reduce_dimension = False
+    reduce_dimension = True
     # Load the dataset
     df = load_dataset(dataset_id)
     # Visualize dataset
