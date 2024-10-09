@@ -7,6 +7,10 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC, SVC
+from sklearn.metrics import precision_recall_curve, auc
+from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 DATASET_RAND_ID = 1
 DATASET_DIGITS_ID = 2
@@ -63,9 +67,7 @@ def plot_dataset(dataset_id: int, df: pd.DataFrame):
         plt.suptitle('Sample of Digits Dataset')
         plt.show()
 
-
-# TODO: перейменвати метод на отримання границь рішень
-def plot_model(dataset_id, x, y, model, model_name):
+def plot_boundaries(dataset_id, x, y, model, model_name):
     if dataset_id == DATASET_RAND_ID:
         plt.figure(figsize=(8, 6))
         X0, X1 = x[:, 0], x[:, 1]
@@ -154,9 +156,129 @@ def model_analysis(y_test, y_predict, y_prob):
     # TODO: закінчити 9 пункт з ходу роботи для лаби
 
 
+def plot_precision_recall_curve(dataset_id, y_test, y_prob, model_name):
+    plt.figure(figsize=(8, 6))
+
+    # Precision-recall curve expects probabilities for the positive class only (binary classification)
+    if dataset_id == DATASET_RAND_ID:
+        precision, recall, _ = precision_recall_curve(y_test, y_prob[:, 1])
+        pr_auc = auc(recall, precision)
+
+        plt.plot(recall, precision, marker='.', label=f'{model_name} (AUC={pr_auc:.2f})')
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title(f'Precision-Recall Curve for {get_dataset_name_by_id(dataset_id)} Dataset')
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.show()
+
+    elif dataset_id == DATASET_DIGITS_ID:
+        # For multiclass classification (DIGITS dataset), we need to calculate PR curves for each class
+        num_classes = len(np.unique(y_test))
+        for i in range(num_classes):
+            precision, recall, _ = precision_recall_curve(y_test == i, y_prob[:, i])
+            pr_auc = auc(recall, precision)
+
+            plt.plot(recall, precision, marker='.', label=f'Class {i} (AUC={pr_auc:.2f})')
+
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title(f'Precision-Recall Curve for {get_dataset_name_by_id(dataset_id)} Dataset')
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.show()
+
+
+def plot_roc_curve(dataset_id, y_test, y_prob, model_name):
+
+    plt.figure(figsize=(8, 6))
+
+    if dataset_id == DATASET_RAND_ID:
+        # Compute ROC curve and ROC AUC for binary classification
+        fpr, tpr, _ = roc_curve(y_test, y_prob[:, 1])
+        roc_auc = roc_auc_score(y_test, y_prob[:, 1])
+
+        plt.plot(fpr, tpr, marker='.', label=f'{model_name} (AUC = {roc_auc:.2f})')
+        plt.title(f'ROC Curve for {get_dataset_name_by_id(dataset_id)} Dataset')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.show()
+
+    elif dataset_id == DATASET_DIGITS_ID:
+        # For multiclass classification (DIGITS dataset), we compute ROC curves for each class
+        num_classes = len(np.unique(y_test))
+        for i in range(num_classes):
+            fpr, tpr, _ = roc_curve(y_test == i, y_prob[:, i])
+            roc_auc = roc_auc_score(y_test == i, y_prob[:, i])
+
+            plt.plot(fpr, tpr, marker='.', label=f'Class {i} (AUC = {roc_auc:.2f})')
+
+        plt.title(f'ROC Curve for {get_dataset_name_by_id(dataset_id)} Dataset')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.show()
+
+
+def calculate_r2_for_model(model, X_train, y_train, X_test, y_test):
+    # Прогнозування на навчальній множині
+    y_train_pred = model.predict(X_train)
+    # Прогнозування на тестовій множині
+    y_test_pred = model.predict(X_test)
+
+    # Обчислення R2 для навчальної множини
+    R2_train = r2_score(y_train, y_train_pred)
+    # Обчислення R2 для тестової множини
+    R2_test = r2_score(y_test, y_test_pred)
+
+    # Виведення результатів
+    print(f"R^2 for Training Set: {R2_train:.4f}")
+    print(f"R^2 for Test Set: {R2_test:.4f}")
+    print("-" * 40)
+
+    # Повернення значень для подальшого використання
+    return {
+        'R2_train': R2_train,
+        'R2_test': R2_test
+    }
+
+
+def calculate_error_metrics(models, X_train, y_train, X_test, y_test):
+    for model_name, model in models.items():
+        print(f"Model: {model_name}")
+
+        # Прогнозування на навчальній та тестовій множинах
+        y_train_pred = model.predict(X_train)
+        y_test_pred = model.predict(X_test)
+
+        # Обчислення метрик для навчальної множини
+        rmse_train = np.sqrt(mean_squared_error(y_train, y_train_pred))
+        mae_train = mean_absolute_error(y_train, y_train_pred)
+        mape_train = np.mean(
+            np.abs((y_train - y_train_pred) / np.where(y_train != 0, y_train, 1))) * 100  # Уникнення ділення на нуль
+
+        # Обчислення метрик для тестової множини
+        rmse_test = np.sqrt(mean_squared_error(y_test, y_test_pred))
+        mae_test = mean_absolute_error(y_test, y_test_pred)
+        mape_test = np.mean(
+            np.abs((y_test - y_test_pred) / np.where(y_test != 0, y_test, 1))) * 100  # Уникнення ділення на нуль
+
+        # Виведення результатів
+        print(f"Training set:")
+        print(f"  RMSE: {rmse_train:.4f}, MAE: {mae_train:.4f}, MAPE: {mape_train:.2f}%")
+        print(f"Test set:")
+        print(f"  RMSE: {rmse_test:.4f}, MAE: {mae_test:.4f}, MAPE: {mape_test:.2f}%")
+        print("-" * 40)
+
 if __name__ == "__main__":
     dataset_id = DATASET_RAND_ID
-    reduce_dimension = True
+    reduce_dimension = False
+    #dataset_id = DATASET_DIGITS_ID
+    #reduce_dimension = True
+
     # Load the dataset
     df = load_dataset(dataset_id)
     # Visualize dataset
@@ -207,8 +329,8 @@ if __name__ == "__main__":
         # Train model
         model.fit(X_train, y_train)
 
-        # Plot model
-        plot_model(dataset_id, X_train, y_train, model, model_name)
+        # Plot model with classification boundaries
+        plot_boundaries(dataset_id, X_train, y_train, model, model_name)
 
         # Predict with model
         y_predict = model.predict(X_test)
@@ -221,3 +343,15 @@ if __name__ == "__main__":
 
         # Analysis for model result
         model_analysis(y_test, y_predict, y_prob)
+
+        # Plot of a precision-recall (PR) curve
+        plot_precision_recall_curve(dataset_id, y_test, y_prob, model_name)
+
+        # Plot of a ROC curve
+        plot_roc_curve(dataset_id, y_test, y_prob, model_name)
+
+        # Check R^2
+        R2_train, R2_test = calculate_r2_for_model(model, X_train, y_train, X_test, y_test)
+
+        # Check error metrics
+        calculate_error_metrics(models, X_train, y_train, X_test, y_test)
