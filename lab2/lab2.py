@@ -11,6 +11,7 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC, SVC
+from sklearn.model_selection import GridSearchCV
 
 DATASET_RAND_ID = 1
 DATASET_DIGITS_ID = 2
@@ -271,6 +272,21 @@ def calculate_error_metrics(y_train_pred, y_test_pred, y_train, y_test, model_na
     print(f"  RMSE: {rmse_test:.4f}, MAE: {mae_test:.4f}, MAPE: {mape_test:.2f}%")
     print("-" * 40)
 
+#
+def grid_search_hyperparameters(classifiers, param_grids, X_train, y_train):
+    best_estimators = {}
+
+    for model_name, classifier in classifiers.items():
+        print(f"\nStarting Grid Search for {model_name}...")
+        grid_search = GridSearchCV(classifier, param_grids[model_name], cv=5, scoring='accuracy')
+        grid_search.fit(X_train, y_train)
+
+        best_estimators[model_name] = grid_search.best_estimator_
+        print(f"Best parameters for {model_name}: {grid_search.best_params_}")
+        print(f"Best cross-validated accuracy: {grid_search.best_score_:.4f}")
+
+    return best_estimators
+
 
 if __name__ == "__main__":
     dataset_id_for_use = DATASET_RAND_ID
@@ -356,3 +372,25 @@ if __name__ == "__main__":
 
         # Check error metrics
         calculate_error_metrics(y_train_predict, y_test_predict, y_train_df, y_test_df, classifier_name)
+        
+            # Define hyperparameter grids for each classifier
+    param_grids = {
+        'LinearSVC_largeC': {'C': [0.1, 1, 10, 100]},
+        'SVC_largeC': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
+        'LinearSVC_smallC': {'C': [0.1, 1, 10, 100]},
+        'SVC_smallC': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
+        'SVC_RBF_Gamma0.1_C0.01': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
+        'SVC_RBF_Gamma0.1_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
+        'SVC_RBF_Gamma0.1_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
+        'SVC_RBF_Gamma10_C0.01': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
+        'SVC_RBF_Gamma10_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
+        'SVC_RBF_Gamma10_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]}
+    }
+        # Perform grid search for hyperparameters
+        best_classifiers = grid_search_hyperparameters(classifiers, param_grids, X_train_df, y_train_df)
+    
+        # best_classifiers to predict and evaluate performance
+        for classifier_name, best_classifier in best_classifiers.items():
+            print(f'\nEvaluating Best Model: {classifier_name}')
+            y_prediction = best_classifier.predict(X_test_df)
+
