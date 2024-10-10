@@ -628,12 +628,17 @@ if __name__ == "__main__":
         'SVC_Kernel_RBF_Gamma10_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
         'SVC_Kernel_RBF_Gamma10_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]}
     }
+
     # Perform grid search for hyperparameters
     best_classifiers = grid_search_hyperparameters(classifiers, parameters_grids, X_train_df, y_train_df)
+    
     # best_classifiers to predict and evaluate performance
     for best_classifier_name, [best_classifier, best_parameters,
                                best_cross_validation_accuracy] in best_classifiers.items():
         print(f'\nEvaluating Best Model: {best_classifier_name}')
+        print(f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}")
+        print(f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
+        print('Dataset:', 'rand' if dataset_id_for_use == DATASET_RAND_ID else 'digits')
 
         if dataset_id_for_use == DATASET_DIGITS_ID:
             print('Reduce dimension:', reduce_dimension_flag)
