@@ -616,26 +616,27 @@ if __name__ == "__main__":
         )
 
     # Define hyperparameter grids for each classifier
-    parameters_grids = {
-        'LinearSVC_largeC(100)': {'C': [0.1, 1, 10, 100]},
-        'SVC_Kernel_linear_largeC(1)': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
-        'LinearSVC_smallC(0.1)': {'C': [0.1, 1, 10, 100]},
-        'SVC_Kernel_linear_smallC(0.1)': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
-        'SVC_Kernel_RBF_Gamma0.1_C0.01': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma0.1_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma0.1_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma10_C0.01': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma10_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma10_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]}
-    }
-
-    # Perform grid search for hyperparameters
-    best_classifiers = grid_search_hyperparameters(classifiers, parameters_grids, X_train_df, y_train_df)
-
-    # best_classifiers to predict and evaluate performance
-    for best_classifier_name, [best_classifier, best_parameters,
-                               best_cross_validation_accuracy] in best_classifiers.items():
-        print(f'\nEvaluating Best Model: {best_classifier_name}')
+     param_grids = {
+        'LinearSVC_largeC': {'C': [0.1, 1, 10, 100]},
+        'SVC_largeC': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
+        'LinearSVC_smallC': {'C': [0.1, 1, 10, 100]},
+        'SVC_smallC': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
+        
+        'SVC_RBF_Gamma0.1_C0.01': {'C': [0.01, 0.1, 1, 10], 'gamma': [0.1]},  
+        'SVC_RBF_Gamma0.1_C1': {'C': [0.1, 1, 10, 100], 'gamma': [0.1]},  
+        'SVC_RBF_Gamma0.1_C100': {'C': [1, 10, 100, 1000], 'gamma': [0.1]},  
+        
+        'SVC_RBF_Gamma10_C0.01': {'C': [0.01, 0.1, 1, 10], 'gamma': [10]}, 
+        'SVC_RBF_Gamma10_C1': {'C': [0.1, 1, 10, 100], 'gamma': [10]},  
+        'SVC_RBF_Gamma10_C100': {'C': [1, 10, 100, 1000], 'gamma': [10]}  
+        }
+            # Perform grid search for hyperparameters
+        best_classifiers = grid_search_hyperparameters(classifiers, param_grids, X_train_df, y_train_df)
+        
+            # best_classifiers to predict and evaluate performance
+        #for classifier_name, best_classifier in best_classifiers.items():
+               # print(f'\nEvaluating Best Model: {classifier_name}')
+               # y_prediction = best_classifier.predict(X_test_df)
         print(f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}")
         print(f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
         print('Dataset:', 'rand' if dataset_id_for_use == DATASET_RAND_ID else 'digits')
