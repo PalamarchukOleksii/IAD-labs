@@ -263,7 +263,7 @@ def check_overfitting(model, x_train, y_train, x_test, y_test, model_name):
 
     y_test_prediction = model.predict(x_test)
     test_accuracy = accuracy_score(y_test, y_test_prediction)
-    eps = 0.05  # TODO: correct eps value
+    eps = 0.05
     print(f'Check overfitting for {model_name}:')
     if train_accuracy - test_accuracy > eps:
         print("Possible overfitting: accuracy on training data is higher than on test data")
