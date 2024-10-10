@@ -166,4 +166,5 @@ cython_debug/
 /workspace.xml
 
 # Custom ignored files
-lab1/plots
+plots
+output_log.txt
