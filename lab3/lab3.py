@@ -16,12 +16,13 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import LinearSVC, SVC
+from sklearn.neural_network import MLPClassifier
 
 DATASET_RAND_ID = 1
 DATASET_DIGITS_ID = 2
 
 TRAIN_SPLIT_RATIO = 0.7
+MIN_TARGET_SCORE = 0.9
 
 
 def get_dataset_name_by_id(dataset_id: int) -> str | None:
@@ -486,6 +487,7 @@ def evaluate_model(classifier, classifier_name, x_train_dataframe, y_train_dataf
     classifier.fit(x_train_dataframe, y_train_dataframe)
 
     # Plot model
+    '''
     plot_model(used_dataset_id, x_train_dataframe, y_train_dataframe, classifier, classifier_name,
                save_plot=save_plots_flg,
                save_path=plots_path,
@@ -496,7 +498,7 @@ def evaluate_model(classifier, classifier_name, x_train_dataframe, y_train_dataf
                     save_plot=save_plots_flg,
                     save_path=plots_path,
                     show_plot=show_plot_flg)
-
+    '''
     # Predict with model
     y_prediction = classifier.predict(x_test_dataframe)
 
@@ -530,12 +532,14 @@ def evaluate_model(classifier, classifier_name, x_train_dataframe, y_train_dataf
     # Check error metrics
     calculate_error_metrics(y_train_predict, y_test_predict, y_train_dataframe, y_test_dataframe, classifier_name)
 
+    # TODO: return real worst model score
+    return 0.91
+
 
 if __name__ == "__main__":
-    dataset_id_for_use = DATASET_RAND_ID
-    reduce_dimension_flag = False
+    dataset_id_for_use = DATASET_DIGITS_ID
     # dataset_id_for_use = DATASET_DIGITS_ID
-    # reduce_dimension_flag = True
+    reduce_dimension_flag = False
 
     log_to_file_flag = False
     log_path = 'output_log.txt'
@@ -581,19 +585,13 @@ if __name__ == "__main__":
         X_train_df = pca.fit_transform(X_train_df)
         X_test_df = pca.transform(X_test_df)
 
-    # Initialize models for LinearSVC and SVC
+    # Initialize models for Single and Multiple hidden layer classifiers
+    mp_hidden_layer_number = 3
     classifiers = {
-        'LinearSVC_largeC(100)': LinearSVC(C=100.0, max_iter=5000),
-        'SVC_Kernel_linear_largeC(1)': SVC(C=1.0, kernel="linear", probability=True),
-        'LinearSVC_smallC(0.1)': LinearSVC(C=0.1, max_iter=5000),
-        'SVC_Kernel_linear_smallC(0.1)': SVC(kernel="linear", C=0.1, probability=True)
+        'Single layer MLPClassifier': MLPClassifier(hidden_layer_sizes=(), max_iter=1000, random_state=42),
+        'Multiple layer MLPClassifier': MLPClassifier(hidden_layer_sizes=(mp_hidden_layer_number,), max_iter=1000,
+                                                      random_state=42),
     }
-
-    # Add RBF kernel models to the dictionary
-    Gamma_C_pairs = [(0.1, 0.01), (0.1, 1), (0.1, 100), (10, 0.01), (10, 1), (10, 100)]
-    for Gamma, C in Gamma_C_pairs:
-        clf_name = f'SVC_Kernel_RBF_Gamma{Gamma}_C{C}'
-        classifiers[clf_name] = SVC(kernel='rbf', gamma=Gamma, C=C, probability=True)
 
     for clf_name, clf in classifiers.items():
         print('\nModel:', clf_name)
@@ -602,36 +600,37 @@ if __name__ == "__main__":
         if dataset_id_for_use == DATASET_DIGITS_ID:
             print('Reduce dimension:', reduce_dimension_flag)
 
-        evaluate_model(
-            clf,
-            clf_name,
-            X_train_df,
-            y_train_df,
-            X_test_df,
-            y_test_df,
-            dataset_id_for_use,
-            save_plots_flag,
-            plots_save_path,
-            show_plot_flag
-        )
+        score = 0
+        while score < MIN_TARGET_SCORE:
+            # TODO: print hidden layers number
+            score = evaluate_model(
+                clf,
+                clf_name,
+                X_train_df,
+                y_train_df,
+                X_test_df,
+                y_test_df,
+                dataset_id_for_use,
+                save_plots_flag,
+                plots_save_path,
+                show_plot_flag
+            )
+            mp_hidden_layer_number = clf.get_params()["hidden_layer_sizes"]
+            # if score is low and clf is Multiple layer NN - increment the number of hidden layers
+            if score < MIN_TARGET_SCORE and mp_hidden_layer_number:
+                clf.set_params({"hidden_layer_sizes": mp_hidden_layer_number + 1})
+                mp_hidden_layer_number += 1
 
     # Define hyperparameter grids for each classifier
+    '''
     parameters_grids = {
-        'LinearSVC_largeC(100)': {'C': [0.1, 1, 10, 100]},
-        'SVC_Kernel_linear_largeC(1)': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
-        'LinearSVC_smallC(0.1)': {'C': [0.1, 1, 10, 100]},
-        'SVC_Kernel_linear_smallC(0.1)': {'C': [0.1, 1, 10, 100], 'kernel': ['linear']},
-        'SVC_Kernel_RBF_Gamma0.1_C0.01': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma0.1_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma0.1_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma10_C0.01': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma10_C1': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]},
-        'SVC_Kernel_RBF_Gamma10_C100': {'C': [0.01, 0.1, 1], 'gamma': [0.1, 1, 10]}
+
     }
 
     # Perform grid search for hyperparameters
-    best_classifiers = grid_search_hyperparameters(classifiers, parameters_grids, X_train_df, y_train_df)
     
+    best_classifiers = grid_search_hyperparameters(classifiers, parameters_grids, X_train_df, y_train_df)
+
     # best_classifiers to predict and evaluate performance
     for best_classifier_name, [best_classifier, best_parameters,
                                best_cross_validation_accuracy] in best_classifiers.items():
@@ -655,7 +654,7 @@ if __name__ == "__main__":
             plots_save_path,
             show_plot_flag
         )
-
+    '''
     if log_to_file_flag:
         log_file.close()
         sys.stdout = original_stdout
