@@ -418,47 +418,6 @@ def plot_roc_curve(dataset_id, y_test, y_prob, model_name, save_plot=True, save_
         print(f"From {func_name}: can't plot, unsupported dataset")
 
 
-def calculate_r2_for_model(y_train_pred, y_test_pred, y_train, y_test, model_name):
-    # Обчислення R2 для навчальної множини
-    r2_train = r2_score(y_train, y_train_pred)
-    # Обчислення R2 для тестової множини
-    r2_test = r2_score(y_test, y_test_pred)
-
-    # Виведення результатів
-    print(f"Calculate R^2: for {model_name}")
-    print(f"R^2 for Training Set: {r2_train:.4f}")
-    print(f"R^2 for Test Set: {r2_test:.4f}")
-    print("-" * 40)
-
-    # Повернення значень для подальшого використання
-    return {
-        'R2_train': r2_train,
-        'R2_test': r2_test
-    }
-
-
-def calculate_error_metrics(y_train_pred, y_test_pred, y_train, y_test, model_name):
-    # Обчислення метрик для навчальної множини
-    rmse_train = np.sqrt(mean_squared_error(y_train, y_train_pred))
-    mae_train = mean_absolute_error(y_train, y_train_pred)
-    mape_train = np.mean(
-        np.abs((y_train - y_train_pred) / np.where(y_train != 0, y_train, 1))) * 100  # Уникнення ділення на нуль
-
-    # Обчислення метрик для тестової множини
-    rmse_test = np.sqrt(mean_squared_error(y_test, y_test_pred))
-    mae_test = mean_absolute_error(y_test, y_test_pred)
-    mape_test = np.mean(
-        np.abs((y_test - y_test_pred) / np.where(y_test != 0, y_test, 1))) * 100  # Уникнення ділення на нуль
-
-    # Виведення результатів
-    print(f"Calculate error metrics for {model_name}:")
-    print(f"Training set:")
-    print(f"  RMSE: {rmse_train:.4f}, MAE: {mae_train:.4f}, MAPE: {mape_train:.2f}%")
-    print(f"Test set:")
-    print(f"  RMSE: {rmse_test:.4f}, MAE: {mae_test:.4f}, MAPE: {mape_test:.2f}%")
-    print("-" * 40)
-
-
 def grid_search_hyperparameters(models, param_grids, x_train, y_train):
     best_estimators = {}
 
@@ -526,11 +485,6 @@ def evaluate_model(classifier, classifier_name, x_train_dataframe, y_train_dataf
                    save_path=plots_path,
                    show_plot=show_plot_flg)
 
-    # Check R^2
-    calculate_r2_for_model(y_train_predict, y_test_predict, y_train_dataframe, y_test_dataframe, classifier_name)
-
-    # Check error metrics
-    calculate_error_metrics(y_train_predict, y_test_predict, y_train_dataframe, y_test_dataframe, classifier_name)
 
     # TODO: return real worst model score
     return 0.91
