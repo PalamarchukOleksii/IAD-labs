@@ -557,6 +557,8 @@ if __name__ == "__main__":
         score = 0
         while score < MIN_TARGET_SCORE:
             # TODO: print hidden layers number
+            print(f"Hidden layer numbers for {clf_name}: {clf.hidden_layer_sizes}")
+
             score = evaluate_model(
                 clf,
                 clf_name,
