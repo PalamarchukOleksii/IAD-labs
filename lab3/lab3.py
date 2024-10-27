@@ -318,24 +318,30 @@ def grid_search_hyperparameters(models, param_grids, x_train, y_train):
 
     for model_name, model in models.items():
         print(f"\nStarting Grid Search for {model_name}...")
+
+        # Conduct grid search with cross-validation
         grid_search = GridSearchCV(
             model, param_grids[model_name], cv=5, scoring="accuracy"
         )
         grid_search.fit(x_train, y_train)
 
         best_estimator = grid_search.best_estimator_
-        model_type = best_estimator.__class__.__name__
         best_params = grid_search.best_params_
         best_cross_valid_accuracy = grid_search.best_score_
-        kernel = getattr(best_estimator, "kernel", "NA")
 
-        # Create a new key based on the base model and best parameters
-        new_key_name = f"Best_{model_type}_Kernel_{kernel}_C{best_params.get('C', '(NA)')}_Gamma{best_params.get('gamma', '(NA)')}"
-        best_estimators[new_key_name] = [
-            best_estimator,
-            best_params,
-            best_cross_valid_accuracy,
-        ]
+        # Create a unique key based on best parameters
+        layer_structure = best_params.get("hidden_layer_sizes", "NA")
+        learning_rate = best_params.get("learning_rate_init", "NA")
+        alpha_value = best_params.get("alpha", "NA")
+        new_key_name = f"Best_MLP_{model_name}_Layers{layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
+
+        # Store the best estimator information
+        best_estimators[new_key_name] = {
+            "estimator": best_estimator,
+            "params": best_params,
+            "cross_valid_accuracy": best_cross_valid_accuracy,
+        }
+
         print(f"End Grid Search for {model_name}")
 
     return best_estimators
