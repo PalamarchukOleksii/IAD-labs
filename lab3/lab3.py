@@ -2,12 +2,13 @@ import inspect
 import os
 import shutil
 import sys
+import warnings
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.datasets import load_digits
-from sklearn.decomposition import PCA
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.metrics import precision_recall_curve, auc
@@ -15,6 +16,9 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+
+# Suppress ConvergenceWarning
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 DATASET_RAND_ID = 1
 DATASET_DIGITS_ID = 2
@@ -45,7 +49,8 @@ def load_dataset(dataset_id: int) -> pd.DataFrame | None:
         digits = load_digits()
         # Convert the digits dataset to a pandas DataFrame
         dataset = pd.DataFrame(
-            digits.data, columns=[f"Pixel_{i}" for i in range(digits.data.shape[1])]
+            digits.data, columns=[
+                f"Pixel_{i}" for i in range(digits.data.shape[1])]
         )
         dataset["Label"] = digits.target
         return dataset
@@ -197,7 +202,8 @@ def plot_precision_recall_curve(
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title(
-            f"Precision-Recall Curve for {get_dataset_name_by_id(dataset_id)} Dataset"
+            f"Precision-Recall Curve for {
+            get_dataset_name_by_id(dataset_id)} Dataset"
         )
         plt.legend(loc="best")
         plt.grid(True)
@@ -217,7 +223,8 @@ def plot_precision_recall_curve(
         # For multiclass classification (DIGITS dataset), we need to calculate PR curves for each class
         num_classes = len(np.unique(y_test))
         for i in range(num_classes):
-            precision, recall, _ = precision_recall_curve(y_test == i, y_prob[:, i])
+            precision, recall, _ = precision_recall_curve(
+                y_test == i, y_prob[:, i])
             pr_auc = auc(recall, precision)
 
             plt.plot(
@@ -227,7 +234,8 @@ def plot_precision_recall_curve(
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title(
-            f"Precision-Recall Curve for {get_dataset_name_by_id(dataset_id)} Dataset"
+            f"Precision-Recall Curve for {
+            get_dataset_name_by_id(dataset_id)} Dataset"
         )
         plt.legend(loc="best")
         plt.grid(True)
@@ -263,8 +271,10 @@ def plot_roc_curve(
         fpr, tpr, _ = roc_curve(y_test, y_prob[:, 1])
         roc_auc = roc_auc_score(y_test, y_prob[:, 1])
 
-        plt.plot(fpr, tpr, marker=".", label=f"{model_name} (AUC = {roc_auc:.2f})")
-        plt.title(f"ROC Curve for {get_dataset_name_by_id(dataset_id)} Dataset")
+        plt.plot(fpr, tpr, marker=".", label=f"{
+        model_name} (AUC = {roc_auc:.2f})")
+        plt.title(f"ROC Curve for {
+        get_dataset_name_by_id(dataset_id)} Dataset")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.legend(loc="best")
@@ -288,9 +298,11 @@ def plot_roc_curve(
             fpr, tpr, _ = roc_curve(y_test == i, y_prob[:, i])
             roc_auc = roc_auc_score(y_test == i, y_prob[:, i])
 
-            plt.plot(fpr, tpr, marker=".", label=f"Class {i} (AUC = {roc_auc:.2f})")
+            plt.plot(fpr, tpr, marker=".", label=f"Class {
+            i} (AUC = {roc_auc:.2f})")
 
-        plt.title(f"ROC Curve for {get_dataset_name_by_id(dataset_id)} Dataset")
+        plt.title(f"ROC Curve for {
+        get_dataset_name_by_id(dataset_id)} Dataset")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.legend(loc="best")
@@ -331,18 +343,33 @@ def grid_search_hyperparameters(models, param_grid, x_train, y_train):
         layer_structure = best_params.get("hidden_layer_sizes", "NA")
         learning_rate = best_params.get("learning_rate_init", "NA")
         alpha_value = best_params.get("alpha", "NA")
-        new_key_name = f"Best_MLPClassifier_Layers{layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
+        new_key_name = f"Best_MLPClassifier_Layers{
+        layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
 
         # Store the best estimator information
-        best_estimators[new_key_name] = [best_estimator, best_params, best_cross_valid_accuracy]
+        best_estimators[new_key_name] = [
+            best_estimator,
+            best_params,
+            best_cross_valid_accuracy,
+        ]
 
         print(f"End Grid Search for {model_name}")
 
     return best_estimators
 
 
-def plot_decision_boundary_helper(x, y, model, x_label, y_label, title, filename='decision_boundary.png',
-                                  save_plot=True, save_path='plots', show_plot=False):
+def plot_decision_boundary_helper(
+        x,
+        y,
+        model,
+        x_label,
+        y_label,
+        title,
+        filename="decision_boundary.png",
+        save_plot=True,
+        save_path="plots",
+        show_plot=False,
+):
     plt.figure(figsize=(8, 6))
     x0, x1 = x[:, 0], x[:, 1]
 
@@ -351,13 +378,13 @@ def plot_decision_boundary_helper(x, y, model, x_label, y_label, title, filename
         model,
         x,
         response_method="predict",
-        cmap='coolwarm',
+        cmap="coolwarm",
         alpha=0.75,
         ax=plt.gca(),
         xlabel=x_label,
-        ylabel=y_label
+        ylabel=y_label,
     )
-    plt.scatter(x0, x1, c=y, cmap='coolwarm', edgecolors="k")
+    plt.scatter(x0, x1, c=y, cmap="coolwarm", edgecolors="k")
     plt.title(title)
 
     if save_plot:
@@ -371,31 +398,30 @@ def plot_decision_boundary_helper(x, y, model, x_label, y_label, title, filename
     plt.close()
 
 
-def plot_boundaries(dataset_id, x, y, model, model_name, filename='decision_boundary.png', save_plot=True,
-                    save_path='plots', show_plot=False):
+def plot_boundaries(
+        dataset_id,
+        x,
+        y,
+        model,
+        model_name,
+        filename="decision_boundary.png",
+        save_plot=True,
+        save_path="plots",
+        show_plot=False,
+):
     if dataset_id == DATASET_RAND_ID:
         plot_decision_boundary_helper(
             x,
             y,
             model,
             filename=filename,
-            save_path=os.path.join(save_path, "random_xor_dataset", model_name),
+            save_path=os.path.join(
+                save_path, "random_xor_dataset", model_name),
             save_plot=save_plot,
             show_plot=show_plot,
-            x_label='Feature 1',
-            y_label='Feature 2',
-            title=f"Decision Boundary on Random XOR Dataset with {model_name}"
-        )
-    elif dataset_id == DATASET_DIGITS_ID and x.shape[1] == 2:
-        plot_decision_boundary_helper(
-            x,
-            y,
-            model,
-            filename=filename,
-            save_path=os.path.join(save_path, "digits_dataset", model_name),
-            x_label='Pixel 1',
-            y_label='Pixel 2',
-            title=f"Decision Boundary on Digits Dataset with {model_name}"
+            x_label="Feature 1",
+            y_label="Feature 2",
+            title=f"Decision Boundary on Random XOR Dataset with {model_name}",
         )
     else:
         func_name = inspect.currentframe().f_code.co_name
@@ -461,12 +487,17 @@ def evaluate_model(
     )
 
     # Plot model with classification boundaries
-    plot_boundaries(used_dataset_id, x_train_dataframe, y_train_dataframe, classifier, classifier_name,
-                    save_plot=save_plots_flg,
-                    save_path=plots_path,
-                    show_plot=show_plot_flg)
+    plot_boundaries(
+        used_dataset_id,
+        x_train_dataframe,
+        y_train_dataframe,
+        classifier,
+        classifier_name,
+        save_plot=save_plots_flg,
+        save_path=plots_path,
+        show_plot=show_plot_flg,
+    )
 
-    # TODO: return real worst model score
     # Calculate and return the accuracy score as the worst model score
     model_score = accuracy_score(y_test_dataframe, y_prediction)
     print(f"Model Score (Accuracy) for {classifier_name}: {model_score:.2f}")
@@ -475,11 +506,9 @@ def evaluate_model(
 
 if __name__ == "__main__":
     dataset_id_for_use = DATASET_RAND_ID
-    reduce_dimension_flag = False
     # dataset_id_for_use = DATASET_DIGITS_ID
-    # reduce_dimension_flag = True
 
-    log_to_file_flag = False
+    log_to_file_flag = True
     log_path = "output_log.txt"
     original_stdout = sys.stdout  # Save the original stdout
     log_file = open(log_path, "w")
@@ -497,55 +526,62 @@ if __name__ == "__main__":
     if save_plots_flag:
         if os.path.exists(plots_save_path):
             shutil.rmtree(plots_save_path)  # Remove existing plots directory
-        os.makedirs(plots_save_path, exist_ok=True)  # Create new plots directory
+        # Create new plots directory
+        os.makedirs(plots_save_path, exist_ok=True)
 
     # Load the dataset
-    dataframe = load_dataset(dataset_id_for_use)  # Make sure this function is defined
-    plot_dataset(dataset_id_for_use, dataframe)  # Ensure this function is defined as well
+    # Make sure this function is defined
+    dataframe = load_dataset(dataset_id_for_use)
+    plot_dataset(
+        dataset_id_for_use, dataframe
+    )  # Ensure this function is defined as well
 
     # Shuffle the dataframe and split it into training and test sets
     split_index = int(TRAIN_SPLIT_RATIO * len(dataframe))
-    dataframe = dataframe.sample(frac=1, random_state=42).reset_index(drop=True)
+    dataframe = dataframe.sample(
+        frac=1, random_state=42).reset_index(drop=True)
     train = dataframe.iloc[:split_index]
     test = dataframe.iloc[split_index:]
 
     # Separate dataset into features and labels
-    X_train_df, y_train_df = separate_dataset(train, "Label")  # Ensure this function is defined
-    X_test_df, y_test_df = separate_dataset(test, "Label")  # Ensure this function is defined
+    X_train_df, y_train_df = separate_dataset(
+        train, "Label"
+    )  # Ensure this function is defined
+    X_test_df, y_test_df = separate_dataset(
+        test, "Label"
+    )  # Ensure this function is defined
 
     # Data scaling
     scaler = StandardScaler()
     X_train_df = scaler.fit_transform(X_train_df)
     X_test_df = scaler.transform(X_test_df)
 
-    if dataset_id_for_use == DATASET_DIGITS_ID and reduce_dimension_flag:
-        pca = PCA(n_components=2)
-        X_train_df = pca.fit_transform(X_train_df)
-        X_test_df = pca.transform(X_test_df)
-
     # Initialize parameters
     neurons_in_hidden_layer_number = 3
-    layer_count = 3  # Adjust based on the number of layers you want for the MLPClassifier
+    layer_count = (
+        3  # Adjust based on the number of layers you want for the MLPClassifier
+    )
     layer_index = 0  # Start with the first layer
     current_layer_neurons = neurons_in_hidden_layer_number
     initial_hidden_layer_sizes = [neurons_in_hidden_layer_number] * layer_count
+    neurons_increment_number = 1
 
     # Initialize models for Single and Multiple hidden layer classifiers
     classifiers = {
         f"MLPClassifier_{neurons_in_hidden_layer_number}": MLPClassifier(
-            hidden_layer_sizes=(neurons_in_hidden_layer_number,),
-            random_state=42),
+            hidden_layer_sizes=(
+                neurons_in_hidden_layer_number,), random_state=42
+        ),
         f"MLPClassifier{f'_{neurons_in_hidden_layer_number}' * layer_count}": MLPClassifier(
             hidden_layer_sizes=(neurons_in_hidden_layer_number,) * layer_count,
-            random_state=42),
+            random_state=42,
+        ),
     }
 
     for clf_name, clf in classifiers.items():
         print("\nModel:", clf_name)
-        print("Dataset:", "rand" if dataset_id_for_use == DATASET_RAND_ID else "digits")
-
-        if dataset_id_for_use == DATASET_DIGITS_ID:
-            print('Reduce dimension:', reduce_dimension_flag)
+        print("Dataset:", "rand" if dataset_id_for_use ==
+                                    DATASET_RAND_ID else "digits")
 
         score = 0
         while score < MIN_TARGET_SCORE:
@@ -571,16 +607,19 @@ if __name__ == "__main__":
             if score < MIN_TARGET_SCORE:
                 if len(hidden_layer_sizes) == 1:  # Single layer model
                     # Increment neurons in the single hidden layer
-                    current_layer_neurons += 1
+                    current_layer_neurons += neurons_increment_number
                     clf.hidden_layer_sizes = (current_layer_neurons,)
                     clf_name = f"MLPClassifier_{current_layer_neurons}"
                 else:  # Multi-layer model
                     # Increment neurons in the current layer
-                    initial_hidden_layer_sizes[layer_index] += 1
+                    initial_hidden_layer_sizes[layer_index] += neurons_increment_number
                     clf.hidden_layer_sizes = tuple(initial_hidden_layer_sizes)
 
                     # Update the classifier name with the current layer configuration
-                    clf_name = f"MLPClassifier_{'_'.join(map(str, clf.hidden_layer_sizes))}"
+                    clf_name = (
+                        f"MLPClassifier_{
+                        '_'.join(map(str, clf.hidden_layer_sizes))}"
+                    )
 
                     # Move to the next layer or reset if at the last layer
                     layer_index += 1
@@ -592,13 +631,29 @@ if __name__ == "__main__":
         "MLPClassifier_3": {
             "hidden_layer_sizes": [(3,), (5,), (10,)],
             "learning_rate_init": [0.001, 0.01, 0.1],
-            "alpha": [0.0001, 0.001, 0.01]
+            "alpha": [0.0001, 0.001, 0.01],
         },
         "MLPClassifier_3_3_3": {
-            "hidden_layer_sizes": [(3, 3, 3,), (5, 5, 5,), (10, 10, 10,)],
+            "hidden_layer_sizes": [
+                (
+                    3,
+                    3,
+                    3,
+                ),
+                (
+                    5,
+                    5,
+                    5,
+                ),
+                (
+                    10,
+                    10,
+                    10,
+                ),
+            ],
             "learning_rate_init": [0.001, 0.01],
-            "alpha": [0.0001, 0.001]
-        }
+            "alpha": [0.0001, 0.001],
+        },
     }
 
     # Perform grid search for hyperparameters
@@ -614,13 +669,13 @@ if __name__ == "__main__":
     ] in best_classifiers.items():
         print(f"\nEvaluating Best Model: {best_classifier_name}")
         print(
-            f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}"
+            f"Best parameters for {
+            best_classifier_name.__class__.__name__}: {best_parameters}"
         )
-        print(f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
-        print("Dataset:", "rand" if dataset_id_for_use == DATASET_RAND_ID else "digits")
-
-        if dataset_id_for_use == DATASET_DIGITS_ID:
-            print('Reduce dimension:', reduce_dimension_flag)
+        print(
+            f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
+        print("Dataset:", "rand" if dataset_id_for_use ==
+                                    DATASET_RAND_ID else "digits")
 
         evaluate_model(
             best_classifier,
@@ -632,7 +687,7 @@ if __name__ == "__main__":
             dataset_id_for_use,
             save_plots_flag,
             plots_save_path,
-            show_plot_flag
+            show_plot_flag,
         )
 
     if log_to_file_flag:
