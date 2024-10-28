@@ -311,7 +311,7 @@ def plot_roc_curve(
         print(f"From {func_name}: can't plot, unsupported dataset")
 
 
-def grid_search_hyperparameters(models, param_grids, x_train, y_train):
+def grid_search_hyperparameters(models, param_grid, x_train, y_train):
     best_estimators = {}
 
     for model_name, model in models.items():
@@ -319,7 +319,7 @@ def grid_search_hyperparameters(models, param_grids, x_train, y_train):
 
         # Conduct grid search with cross-validation
         grid_search = GridSearchCV(
-            model, param_grids[model_name], cv=5, scoring="accuracy"
+            model, param_grid[model_name], cv=5, scoring="accuracy"
         )
         grid_search.fit(x_train, y_train)
 
@@ -331,14 +331,10 @@ def grid_search_hyperparameters(models, param_grids, x_train, y_train):
         layer_structure = best_params.get("hidden_layer_sizes", "NA")
         learning_rate = best_params.get("learning_rate_init", "NA")
         alpha_value = best_params.get("alpha", "NA")
-        new_key_name = f"Best_MLP_{model_name}_Layers{layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
+        new_key_name = f"Best_MLPClassifier_Layers{layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
 
         # Store the best estimator information
-        best_estimators[new_key_name] = {
-            "estimator": best_estimator,
-            "params": best_params,
-            "cross_valid_accuracy": best_cross_valid_accuracy,
-        }
+        best_estimators[new_key_name] = [best_estimator, best_params, best_cross_valid_accuracy]
 
         print(f"End Grid Search for {model_name}")
 
@@ -539,9 +535,8 @@ if __name__ == "__main__":
         f"MLPClassifier_{neurons_in_hidden_layer_number}": MLPClassifier(
             hidden_layer_sizes=(neurons_in_hidden_layer_number,),
             random_state=42),
-        f"MLPClassifier_{neurons_in_hidden_layer_number}_{neurons_in_hidden_layer_number}_{neurons_in_hidden_layer_number}": MLPClassifier(
-            hidden_layer_sizes=(
-                neurons_in_hidden_layer_number, neurons_in_hidden_layer_number, neurons_in_hidden_layer_number,),
+        f"MLPClassifier{f'_{neurons_in_hidden_layer_number}' * layer_count}": MLPClassifier(
+            hidden_layer_sizes=(neurons_in_hidden_layer_number,) * layer_count,
             random_state=42),
     }
 
@@ -581,7 +576,7 @@ if __name__ == "__main__":
                     clf_name = f"MLPClassifier_{current_layer_neurons}"
                 else:  # Multi-layer model
                     # Increment neurons in the current layer
-                    initial_hidden_layer_sizes[layer_index] += 1  # Збільшуємо нейрони в поточному шарі
+                    initial_hidden_layer_sizes[layer_index] += 1
                     clf.hidden_layer_sizes = tuple(initial_hidden_layer_sizes)
 
                     # Update the classifier name with the current layer configuration
@@ -592,43 +587,53 @@ if __name__ == "__main__":
                     if layer_index >= len(hidden_layer_sizes):
                         layer_index = 0
 
-    # # Define hyperparameter grids for each classifier
-    # param_grid = {}
-    #
-    # # Perform grid search for hyperparameters
-    #
-    # best_classifiers = grid_search_hyperparameters(
-    #     classifiers, param_grid, X_train_df, y_train_df
-    # )
-    #
-    # # best_classifiers to predict and evaluate performance
-    # for best_classifier_name, [
-    #     best_classifier,
-    #     best_parameters,
-    #     best_cross_validation_accuracy,
-    # ] in best_classifiers.items():
-    #     print(f"\nEvaluating Best Model: {best_classifier_name}")
-    #     print(
-    #         f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}"
-    #     )
-    #     print(f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
-    #     print("Dataset:", "rand" if dataset_id_for_use == DATASET_RAND_ID else "digits")
-    #
-    #     if dataset_id_for_use == DATASET_DIGITS_ID:
-    #         print('Reduce dimension:', reduce_dimension_flag)
-    #
-    #     evaluate_model(
-    #         best_classifier,
-    #         best_classifier_name,
-    #         X_train_df,
-    #         y_train_df,
-    #         X_test_df,
-    #         y_test_df,
-    #         dataset_id_for_use,
-    #         save_plots_flag,
-    #         plots_save_path,
-    #         show_plot_flag
-    #     )
+    # Define hyperparameter grids for each classifier
+    param_grids = {
+        "MLPClassifier_3": {
+            "hidden_layer_sizes": [(3,), (5,), (10,)],
+            "learning_rate_init": [0.001, 0.01, 0.1],
+            "alpha": [0.0001, 0.001, 0.01]
+        },
+        "MLPClassifier_3_3_3": {
+            "hidden_layer_sizes": [(3, 3, 3,), (5, 5, 5,), (10, 10, 10,)],
+            "learning_rate_init": [0.001, 0.01],
+            "alpha": [0.0001, 0.001]
+        }
+    }
+
+    # Perform grid search for hyperparameters
+    best_classifiers = grid_search_hyperparameters(
+        classifiers, param_grids, X_train_df, y_train_df
+    )
+
+    # best_classifiers to predict and evaluate performance
+    for best_classifier_name, [
+        best_classifier,
+        best_parameters,
+        best_cross_validation_accuracy,
+    ] in best_classifiers.items():
+        print(f"\nEvaluating Best Model: {best_classifier_name}")
+        print(
+            f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}"
+        )
+        print(f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
+        print("Dataset:", "rand" if dataset_id_for_use == DATASET_RAND_ID else "digits")
+
+        if dataset_id_for_use == DATASET_DIGITS_ID:
+            print('Reduce dimension:', reduce_dimension_flag)
+
+        evaluate_model(
+            best_classifier,
+            best_classifier_name,
+            X_train_df,
+            y_train_df,
+            X_test_df,
+            y_test_df,
+            dataset_id_for_use,
+            save_plots_flag,
+            plots_save_path,
+            show_plot_flag
+        )
 
     if log_to_file_flag:
         log_file.close()
