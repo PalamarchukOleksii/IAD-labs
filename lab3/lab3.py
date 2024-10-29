@@ -136,8 +136,8 @@ def check_overfitting(model, x_train, y_train, x_test, y_test, model_name):
     y_test_prediction = model.predict(x_test)
     test_accuracy = accuracy_score(y_test, y_test_prediction)
     eps = 0.05
-    print(f"Check overfitting for {model_name}:")
-    if abs(train_accuracy - test_accuracy) > eps:
+    print(f"Check overfitting for {model_name} with correlation level {eps}:")
+    if (train_accuracy - test_accuracy) > eps:
         print(
             "Possible overfitting: accuracy on training data is higher than on test data"
         )
@@ -202,8 +202,7 @@ def plot_precision_recall_curve(
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title(
-            f"Precision-Recall Curve for {
-            get_dataset_name_by_id(dataset_id)} Dataset"
+            f"Precision-Recall Curve for {get_dataset_name_by_id(dataset_id)} Dataset"
         )
         plt.legend(loc="best")
         plt.grid(True)
@@ -234,8 +233,7 @@ def plot_precision_recall_curve(
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title(
-            f"Precision-Recall Curve for {
-            get_dataset_name_by_id(dataset_id)} Dataset"
+            f"Precision-Recall Curve for {get_dataset_name_by_id(dataset_id)} Dataset"
         )
         plt.legend(loc="best")
         plt.grid(True)
@@ -271,10 +269,8 @@ def plot_roc_curve(
         fpr, tpr, _ = roc_curve(y_test, y_prob[:, 1])
         roc_auc = roc_auc_score(y_test, y_prob[:, 1])
 
-        plt.plot(fpr, tpr, marker=".", label=f"{
-        model_name} (AUC = {roc_auc:.2f})")
-        plt.title(f"ROC Curve for {
-        get_dataset_name_by_id(dataset_id)} Dataset")
+        plt.plot(fpr, tpr, marker=".", label=f"{model_name} (AUC = {roc_auc:.2f})")
+        plt.title(f"ROC Curve for {get_dataset_name_by_id(dataset_id)} Dataset")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.legend(loc="best")
@@ -298,11 +294,9 @@ def plot_roc_curve(
             fpr, tpr, _ = roc_curve(y_test == i, y_prob[:, i])
             roc_auc = roc_auc_score(y_test == i, y_prob[:, i])
 
-            plt.plot(fpr, tpr, marker=".", label=f"Class {
-            i} (AUC = {roc_auc:.2f})")
+            plt.plot(fpr, tpr, marker=".", label=f"Class {i} (AUC = {roc_auc:.2f})")
 
-        plt.title(f"ROC Curve for {
-        get_dataset_name_by_id(dataset_id)} Dataset")
+        plt.title(f"ROC Curve for {get_dataset_name_by_id(dataset_id)} Dataset")
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.legend(loc="best")
@@ -343,8 +337,7 @@ def grid_search_hyperparameters(models, param_grid, x_train, y_train):
         layer_structure = best_params.get("hidden_layer_sizes", "NA")
         learning_rate = best_params.get("learning_rate_init", "NA")
         alpha_value = best_params.get("alpha", "NA")
-        new_key_name = f"Best_MLPClassifier_Layers{
-        layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
+        new_key_name = f"Best_MLPClassifier_Layers{layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
 
         # Store the best estimator information
         best_estimators[new_key_name] = [
@@ -530,11 +523,10 @@ if __name__ == "__main__":
         os.makedirs(plots_save_path, exist_ok=True)
 
     # Load the dataset
-    # Make sure this function is defined
     dataframe = load_dataset(dataset_id_for_use)
     plot_dataset(
         dataset_id_for_use, dataframe
-    )  # Ensure this function is defined as well
+    )
 
     # Shuffle the dataframe and split it into training and test sets
     split_index = int(TRAIN_SPLIT_RATIO * len(dataframe))
@@ -559,7 +551,7 @@ if __name__ == "__main__":
     # Initialize parameters
     neurons_in_hidden_layer_number = 3
     layer_count = (
-        3  # Adjust based on the number of layers you want for the MLPClassifier
+        3
     )
     layer_index = 0  # Start with the first layer
     current_layer_neurons = neurons_in_hidden_layer_number
@@ -580,8 +572,7 @@ if __name__ == "__main__":
 
     for clf_name, clf in classifiers.items():
         print("\nModel:", clf_name)
-        print("Dataset:", "rand" if dataset_id_for_use ==
-                                    DATASET_RAND_ID else "digits")
+        print("Dataset:", "rand" if dataset_id_for_use == DATASET_RAND_ID else "digits")
 
         score = 0
         while score < MIN_TARGET_SCORE:
@@ -605,6 +596,7 @@ if __name__ == "__main__":
 
             # Adjust the model based on the score
             if score < MIN_TARGET_SCORE:
+                print("Target precision not satisfied. Incrementing number of hidden layers")
                 if len(hidden_layer_sizes) == 1:  # Single layer model
                     # Increment neurons in the single hidden layer
                     current_layer_neurons += neurons_increment_number
@@ -617,8 +609,7 @@ if __name__ == "__main__":
 
                     # Update the classifier name with the current layer configuration
                     clf_name = (
-                        f"MLPClassifier_{
-                        '_'.join(map(str, clf.hidden_layer_sizes))}"
+                        f"MLPClassifier_{'_'.join(map(str, clf.hidden_layer_sizes))}"
                     )
 
                     # Move to the next layer or reset if at the last layer
@@ -669,8 +660,7 @@ if __name__ == "__main__":
     ] in best_classifiers.items():
         print(f"\nEvaluating Best Model: {best_classifier_name}")
         print(
-            f"Best parameters for {
-            best_classifier_name.__class__.__name__}: {best_parameters}"
+            f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}"
         )
         print(
             f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
