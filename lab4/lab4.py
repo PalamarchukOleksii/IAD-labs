@@ -73,7 +73,6 @@ def plot_dataset(
         plt.scatter(
             df["Feature_1"],
             df["Feature_2"],
-            c=df["Label"],
             cmap="coolwarm",
             edgecolor="k",
         )
@@ -280,6 +279,7 @@ def evaluate_model(
 
     metrics_report(x_train_dataframe, y_train_labels, model_name)
 
+    plot_dataset(dataset_id_for_use, dataframe, save_path=plots_path)
     # Plot clustering boundaries if requested
     if save_plots_flg:
         os.makedirs(plots_path, exist_ok=True)
@@ -323,7 +323,7 @@ if __name__ == "__main__":
     # Load the dataset
     dataframe = load_dataset(dataset_id_for_use)
     plot_dataset(
-        dataset_id_for_use, dataframe
+        dataset_id_for_use, dataframe, save_path="data"
     )
     # TODO: Чи є розбиття стабiльним пiсля змiни порядку об’єктiв у множинi об’єктiв?
     # Shuffle the dataframe and split it into training and test sets
@@ -349,18 +349,18 @@ if __name__ == "__main__":
     for model in clustering_models:
         print(f"\nModel: DBSCAN with {model.metric} metric")
         print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
-
+        model_name = f"DBSCAN with {model.metric} metric"
         # Evaluate the model
         evaluate_model(
             model,
-            f"DBSCAN with {model.metric} metric",
+            model_name,
             dataset_id_for_use,
             X_train_df,
             y_train_df,
             X_test_df,
             y_test_df,
             save_plots_flag,
-            plots_save_path,
+            os.path.join(plots_save_path, model_name),
             show_plot_flag,
         )
 
