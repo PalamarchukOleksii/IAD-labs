@@ -1,4 +1,5 @@
 import inspect
+from itertools import product
 import os
 import shutil
 import sys
@@ -16,9 +17,6 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from sklearn.metrics import silhouette_score, adjusted_rand_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.cluster import DBSCAN
-
-# Suppress ConvergenceWarning
-warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 DATASET_CIRCLES_ID = 1
 DATASET_BLOBS_ID = 2
@@ -120,7 +118,6 @@ def plot_dataset(
 
 
 def separate_dataset(df, target):
-    # Drop the target column to get the feature columns
     x = df.drop(columns=[target]).values
     y = df[target].values
 
@@ -185,7 +182,8 @@ def grid_search_hyperparameters(models, param_grid, x_train, y_train):
         layer_structure = best_params.get("hidden_layer_sizes", "NA")
         learning_rate = best_params.get("learning_rate_init", "NA")
         alpha_value = best_params.get("alpha", "NA")
-        new_key_name = f"Best_MLPClassifier_Layers{layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
+        new_key_name = f"Best_MLPClassifier_Layers{
+            layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
 
         # Store the best estimator information
         best_estimators[new_key_name] = [
@@ -259,14 +257,15 @@ def plot_boundaries(
         func_name = inspect.currentframe().f_code.co_name
         print(f"From {func_name}: can't plot, unsupported dataset or dimensions")
 
+
 def visualize_clusters(x_train, y_train_labels, model_name, save_path="plots", show_plot=False):
     """Enhanced visualization for DBSCAN clustering."""
     plt.figure(figsize=(10, 8))
     unique_labels = set(y_train_labels)
-    
+
     # Use a color map for better differentiation
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
-    
+
     for k, col in zip(unique_labels, colors):
         if k == -1:
             # Black color for noise points
@@ -282,10 +281,11 @@ def visualize_clusters(x_train, y_train_labels, model_name, save_path="plots", s
         # Mask for the current cluster points
         class_member_mask = (y_train_labels == k)
         xy = x_train[class_member_mask]
-        
+
         # Visualize each cluster
-        plt.scatter(xy[:, 0], xy[:, 1], c=[col], edgecolor='k', s=50, alpha=alpha, label=label, marker=marker)
-    
+        plt.scatter(xy[:, 0], xy[:, 1], c=[col], edgecolor='k',
+                    s=50, alpha=alpha, label=label, marker=marker)
+
     # Set titles and labels
     plt.title(f"Enhanced DBSCAN Clustering for {model_name}")
     plt.xlabel("Feature 1")
@@ -298,10 +298,11 @@ def visualize_clusters(x_train, y_train_labels, model_name, save_path="plots", s
     filename = os.path.join(save_path, f"{model_name}_enhanced_clusters.png")
     plt.savefig(filename)
     print(f"Enhanced cluster image saved at: {filename}")
-    
+
     if show_plot:
         plt.show()
     plt.close()
+
 
 def evaluate_model(
         model,
@@ -320,16 +321,20 @@ def evaluate_model(
     end_time = time.time()  # End timing
 
     # Print clustering time
-    print(f"Clustering time for {model_name}: {end_time - start_time:.2f} seconds")
+    print(f"Clustering time for {model_name}: {
+          end_time - start_time:.2f} seconds")
 
     y_train_labels = model.labels_
 
     metrics_report(x_train_dataframe, y_train_labels, model_name)
 
     if save_plots_flg:
-        visualize_clusters(x_train_dataframe, y_train_labels, model_name, save_path=plots_path, show_plot=show_plot_flg)
+        visualize_clusters(x_train_dataframe, y_train_labels,
+                           model_name, save_path=plots_path, show_plot=show_plot_flg)
 
 # Update load_dataset function to support larger datasets
+
+
 def load_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame | None:
     if dataset_id == DATASET_CIRCLES_ID:
         X, y = make_circles(n_samples, factor=.1, noise=.1)
@@ -355,9 +360,10 @@ def load_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame | None
 
     return None
 
+
 if __name__ == "__main__":
-    dataset_id_for_use = DATASET_CIRCLES_ID
-    # dataset_id_for_use = DATASET_BLOBS_ID
+    # dataset_id_for_use = DATASET_CIRCLES_ID
+    dataset_id_for_use = DATASET_BLOBS_ID
 
     log_to_file_flag = False
     log_path = "output_log.txt"
@@ -400,26 +406,53 @@ if __name__ == "__main__":
     test = dataframe.iloc[split_index:]
 
     # Separate dataset into features and labels
-    X_train_df, y_train_df = separate_dataset(
-        train, "Label"
+    X_train_df, y_train_df = separate_dataset(train, "Label")
+    X_test_df, y_test_df = separate_dataset(test, "Label")
+
+    model = DBSCAN()
+
+    print(f"Model: DBSCAN with {model.metric} metric")
+    print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+
+    # Evaluate the model
+    evaluate_model(
+        model,
+        f"DBSCAN with {model.metric} metric",
+        dataset_id_for_use,
+        X_train_df,
+        y_train_df,
+        X_test_df,
+        y_test_df,
+        save_plots_flag,
+        plots_save_path,
+        show_plot_flag,
     )
-    X_test_df, y_test_df = separate_dataset(
-        test, "Label"
-    )
 
-    clustering_models = [DBSCAN(eps=0.1, min_samples=15, metric='euclidean'),
-                         DBSCAN(eps=0.1, min_samples=15, metric='cosine'),
-                         DBSCAN(eps=0.1, min_samples=15, metric='minkowski', p=2),
-                         DBSCAN(eps=0.1, min_samples=15, metric='chebyshev')]
+    # Define parameter values to test
+    eps_values = [0.1, 0.25, 0.5]
+    min_samples_values = [5, 10, 15]
+    metrics = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
+    p_values = [1, 2, 3]
 
-    for model in clustering_models:
-        print(f"\nModel: DBSCAN with {model.metric} metric")
-        print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+    # Prepare combinations of parameters
+    param_combinations = list(product(
+        eps_values, min_samples_values, metrics, p_values))
 
-        # Evaluate the model
+    # Loop through each combination, apply DBSCAN, and evaluate it
+    for eps, min_samples, metric, p in param_combinations:
+        # Create a new DBSCAN model with the current combination of parameters
+        new_model = DBSCAN(
+            eps=eps,
+            min_samples=min_samples,
+            metric=metric,
+            p=p
+        )
+
+        # Evaluate the model using the evaluate_model function
         evaluate_model(
-            model,
-            f"DBSCAN with {model.metric} metric",
+            new_model,
+            f"DBSCAN with {metric} metric, eps={eps}, min_samples={
+                min_samples}, p={p}",
             dataset_id_for_use,
             X_train_df,
             y_train_df,
@@ -427,7 +460,7 @@ if __name__ == "__main__":
             y_test_df,
             save_plots_flag,
             plots_save_path,
-            show_plot_flag,
+            show_plot_flag
         )
 
     # Define hyperparameter grids for each classifier
