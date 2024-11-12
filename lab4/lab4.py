@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import warnings
+import time
 
 import numpy as np
 import pandas as pd
@@ -258,6 +259,53 @@ def plot_boundaries(
         func_name = inspect.currentframe().f_code.co_name
         print(f"From {func_name}: can't plot, unsupported dataset or dimensions")
 
+def visualize_clusters(x_train, y_train_labels, model_name, save_path="plots", show_plot=False):
+    """Enhanced visualization for DBSCAN clustering."""
+    plt.figure(figsize=(10, 8))
+    unique_labels = set(y_train_labels)
+    
+    # Use a color map for better differentiation
+    colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
+    
+    for k, col in zip(unique_labels, colors):
+        if k == -1:
+            # Black color for noise points
+            col = 'k'
+            label = "Noise"
+            alpha = 0.3  # More transparency for noise
+            marker = 'x'  # Distinct marker for noise
+        else:
+            label = f"Cluster {k}"
+            alpha = 0.8
+            marker = 'o'  # Circle marker for clusters
+
+        # Mask for the current cluster points
+        class_member_mask = (y_train_labels == k)
+        xy = x_train[class_member_mask]
+        
+        # Visualize each cluster
+        plt.scatter(xy[:, 0], xy[:, 1], c=[col], edgecolor='k', s=50, alpha=alpha, label=label, marker=marker)
+    
+    # Set titles and labels
+    plt.title(f"Enhanced DBSCAN Clustering for {model_name}")
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.legend(loc="best", markerscale=1.0)
+    plt.grid(True, color='grey', linestyle='--', linewidth=0.5)
+
+    # Add decision boundary visualization if requested
+    if hasattr(DBSCAN, "eps"): 
+        plt.contour(x_train[:, 0], x_train[:, 1], alpha=0.1, colors="red")  # Placeholder for boundary visualization
+    
+    # Save or show the plot
+    os.makedirs(save_path, exist_ok=True)
+    filename = os.path.join(save_path, f"{model_name}_enhanced_clusters.png")
+    plt.savefig(filename)
+    print(f"Enhanced cluster image saved at: {filename}")
+    
+    if show_plot:
+        plt.show()
+    plt.close()
 
 def evaluate_model(
         model,
@@ -273,13 +321,29 @@ def evaluate_model(
 ):
     # Train DBSCAN model
     model.fit(x_train_dataframe)
-
-    # Get labels (clusters) predicted by DBSCAN
-    y_train_labels = model.labels_
-
+start_time = time.time() # Розрахунок часу кластеризації
+clustering_time = time.time() - start_time
+    print(f"Час кластеризації для {model_name}: {clustering_time:.2f} секунд")
+   y_train_labels = model.labels_
     metrics_report(x_train_dataframe, y_train_labels, model_name)
 
+    # Отримання міток кластерів, передбачених DBSCAN
+    y_train_labels = model.labels_
+    metrics_report(x_train_dataframe, y_train_labels, model_name)
+
+    # Візуалізація кластерів
+    visualize_clusters(x_train_dataframe, y_train_labels, model_name, save_path=plots_save_path, show_plot=show_plot_flg)
+    
+    # Додатковий аналіз продуктивності на великих наборах даних
+    if len(x_train_dataframe) >= 100000:
+        print(f"Оцінка для надвеликих даних: час кластеризації становить {clustering_time:.2f} секунд, "
+              f"що може бути тривалим для надвеликих наборів.")
+    else:
+        print("Час кластеризації вважається ефективним для поточного обсягу даних.")
+
+    # Додавання меж кластерів для різних метрик
     plot_dataset(dataset_id_for_use, dataframe, save_path=plots_path)
+
     # Plot clustering boundaries if requested
     if save_plots_flg:
         os.makedirs(plots_path, exist_ok=True)
