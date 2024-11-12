@@ -293,10 +293,6 @@ def visualize_clusters(x_train, y_train_labels, model_name, save_path="plots", s
     plt.legend(loc="best", markerscale=1.0)
     plt.grid(True, color='grey', linestyle='--', linewidth=0.5)
 
-    # Add decision boundary visualization if requested
-    if hasattr(DBSCAN, "eps"): 
-        plt.contour(x_train[:, 0], x_train[:, 1], alpha=0.1, colors="red")  # Placeholder for boundary visualization
-    
     # Save or show the plot
     os.makedirs(save_path, exist_ok=True)
     filename = os.path.join(save_path, f"{model_name}_enhanced_clusters.png")
@@ -319,45 +315,45 @@ def evaluate_model(
         plots_path="plots",
         show_plot_flg=False,
 ):
-    # Train DBSCAN model
+    start_time = time.time()  # Start timing
     model.fit(x_train_dataframe)
-start_time = time.time() # Розрахунок часу кластеризації
-clustering_time = time.time() - start_time
-    print(f"Час кластеризації для {model_name}: {clustering_time:.2f} секунд")
-   y_train_labels = model.labels_
-    metrics_report(x_train_dataframe, y_train_labels, model_name)
+    end_time = time.time()  # End timing
 
-    # Отримання міток кластерів, передбачених DBSCAN
+    # Print clustering time
+    print(f"Clustering time for {model_name}: {end_time - start_time:.2f} seconds")
+
     y_train_labels = model.labels_
+
     metrics_report(x_train_dataframe, y_train_labels, model_name)
 
-    # Візуалізація кластерів
-    visualize_clusters(x_train_dataframe, y_train_labels, model_name, save_path=plots_save_path, show_plot=show_plot_flg)
-    
-    # Додатковий аналіз продуктивності на великих наборах даних
-    if len(x_train_dataframe) >= 100000:
-        print(f"Оцінка для надвеликих даних: час кластеризації становить {clustering_time:.2f} секунд, "
-              f"що може бути тривалим для надвеликих наборів.")
-    else:
-        print("Час кластеризації вважається ефективним для поточного обсягу даних.")
-
-    # Додавання меж кластерів для різних метрик
-    plot_dataset(dataset_id_for_use, dataframe, save_path=plots_path)
-
-    # Plot clustering boundaries if requested
     if save_plots_flg:
-        os.makedirs(plots_path, exist_ok=True)
-        plot_boundaries(
-            used_dataset_id,
-            x_train_dataframe,
-            y_train_labels,
-            model,
-            model_name,
-            save_plot=save_plots_flg,
-            save_path=plots_path,
-            show_plot=show_plot_flg,
-        )
+        visualize_clusters(x_train_dataframe, y_train_labels, model_name, save_path=plots_path, show_plot=show_plot_flg)
 
+# Update load_dataset function to support larger datasets
+def load_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame | None:
+    if dataset_id == DATASET_CIRCLES_ID:
+        X, y = make_circles(n_samples, factor=.1, noise=.1)
+        dataset = pd.DataFrame(X, columns=["Feature_1", "Feature_2"])
+        dataset["Label"] = y.astype(int)
+        return dataset
+
+    elif dataset_id == DATASET_BLOBS_ID:
+        n_samples_1 = int(n_samples * 0.6)
+        n_samples_2 = int(n_samples * 0.2)
+        n_samples_3 = n_samples - n_samples_1 - n_samples_2
+        centers = [[0.0, 0.0], [2.5, 2.5], [-2.5, -2.5]]
+        clusters_std = [1.5, 0.5, 1.0]
+        X, y = make_blobs(n_samples=[n_samples_1, n_samples_2, n_samples_3],
+                          centers=centers, cluster_std=clusters_std,
+                          random_state=0, shuffle=False)
+        dataset = pd.DataFrame(X, columns=["Feature_1", "Feature_2"])
+        dataset["Label"] = y.astype(int)
+        return dataset
+    else:
+        func_name = inspect.currentframe().f_code.co_name
+        print(f"From {func_name}: can't load, unsupported dataset")
+
+    return None
 
 if __name__ == "__main__":
     # dataset_id_for_use = DATASET_CIRCLES_ID
@@ -413,18 +409,18 @@ if __name__ == "__main__":
     for model in clustering_models:
         print(f"\nModel: DBSCAN with {model.metric} metric")
         print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
-        model_name = f"DBSCAN with {model.metric} metric"
+
         # Evaluate the model
         evaluate_model(
             model,
-            model_name,
+            f"DBSCAN with {model.metric} metric",
             dataset_id_for_use,
             X_train_df,
             y_train_df,
             X_test_df,
             y_test_df,
             save_plots_flag,
-            os.path.join(plots_save_path, model_name),
+            plots_save_path,
             show_plot_flag,
         )
 
