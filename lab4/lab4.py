@@ -83,7 +83,7 @@ def plot_dataset(
         plt.colorbar(label="Label")
 
         if save_plot:
-            circles_path = os.path.join(save_path, "circles_dataset")
+            circles_path = save_path
             os.makedirs(circles_path, exist_ok=True)
             filename = os.path.join(circles_path, "dataset_plot.png")
             plt.savefig(filename)
@@ -104,7 +104,7 @@ def plot_dataset(
         plt.colorbar(label="Label")
 
         if save_plot:
-            blobs_path = os.path.join(save_path, "blobs_dataset")
+            blobs_path = save_path
             os.makedirs(blobs_path, exist_ok=True)
             filename = os.path.join(blobs_path, "dataset_plot.png")
             plt.savefig(filename)
@@ -356,10 +356,10 @@ def load_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame | None
     return None
 
 if __name__ == "__main__":
-    # dataset_id_for_use = DATASET_CIRCLES_ID
-    dataset_id_for_use = DATASET_BLOBS_ID
+    dataset_id_for_use = DATASET_CIRCLES_ID
+    # dataset_id_for_use = DATASET_BLOBS_ID
 
-    log_to_file_flag = True
+    log_to_file_flag = False
     log_path = "output_log.txt"
     original_stdout = sys.stdout  # Save the original stdout
     log_file = open(log_path, "w")
@@ -375,6 +375,12 @@ if __name__ == "__main__":
     plots_save_path = "plots"
 
     if save_plots_flag:
+        if dataset_id_for_use == DATASET_BLOBS_ID:
+            plots_save_path = "plots/blobs_dataset"
+        elif dataset_id_for_use == DATASET_CIRCLES_ID:
+            plots_save_path = "plots/circles_dataset"
+
+    if save_plots_flag:
         if os.path.exists(plots_save_path):
             shutil.rmtree(plots_save_path)  # Remove existing plots directory
         # Create new plots directory
@@ -383,7 +389,7 @@ if __name__ == "__main__":
     # Load the dataset
     dataframe = load_dataset(dataset_id_for_use)
     plot_dataset(
-        dataset_id_for_use, dataframe, save_path="data"
+        dataset_id_for_use, dataframe, save_path=plots_save_path
     )
     # TODO: Чи є розбиття стабiльним пiсля змiни порядку об’єктiв у множинi об’єктiв?
     # Shuffle the dataframe and split it into training and test sets
