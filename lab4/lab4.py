@@ -60,12 +60,43 @@ def load_dataset(dataset_id: int) -> pd.DataFrame | None:
     return None
 
 
+# Update load_dataset function to support larger datasets
+def load_large_dataset(dataset_id: int, n_samples: int = 100000) -> pd.DataFrame | None:
+    if dataset_id == DATASET_CIRCLES_ID:
+        x, y = make_circles(n_samples, factor=0.1, noise=0.1)
+        dataset = pd.DataFrame(x, columns=["Feature_1", "Feature_2"])
+        dataset["Label"] = y.astype(int)
+        return dataset
+
+    elif dataset_id == DATASET_BLOBS_ID:
+        n_samples_1 = int(n_samples * 0.6)
+        n_samples_2 = int(n_samples * 0.2)
+        n_samples_3 = n_samples - n_samples_1 - n_samples_2
+        centers = [[0.0, 0.0], [2.5, 2.5], [-2.5, -2.5]]
+        clusters_std = [1.5, 0.5, 1.0]
+        x, y = make_blobs(
+            n_samples=[n_samples_1, n_samples_2, n_samples_3],
+            centers=centers,
+            cluster_std=clusters_std,
+            random_state=0,
+            shuffle=False,
+        )
+        dataset = pd.DataFrame(x, columns=["Feature_1", "Feature_2"])
+        dataset["Label"] = y.astype(int)
+        return dataset
+    else:
+        func_name = inspect.currentframe().f_code.co_name
+        print(f"From {func_name}: can't load, unsupported dataset")
+
+    return None
+
+
 def plot_dataset(
-    dataset_id: int,
-    df: pd.DataFrame,
-    save_plot=True,
-    save_path="plots",
-    show_plot=False,
+        dataset_id: int,
+        df: pd.DataFrame,
+        save_plot=True,
+        save_path="plots",
+        show_plot=False,
 ):
     # Create the directory for saving plots if needed
     if save_plot:
@@ -76,7 +107,7 @@ def plot_dataset(
     plt.xlabel("Feature 1")
     plt.ylabel("Feature 2")
     plt.title("Circles Dataset" if dataset_id ==
-              DATASET_CIRCLES_ID else "Blobs Dataset")
+                                   DATASET_CIRCLES_ID else "Blobs Dataset")
     plt.grid(True, color="grey", linestyle="--", linewidth=0.5)
 
     # Configure plot-specific settings
@@ -149,7 +180,7 @@ def metrics_report(x_train, y_train, y_train_real, metric):
 
 
 def visualize_clusters(
-    x_train, y_train_labels, model_name, save_path="plots", show_plot=False
+        x_train, y_train_labels, model_name, save_path="plots", show_plot=False
 ):
     """Enhanced visualization for DBSCAN clustering."""
     plt.figure(figsize=(10, 10))
@@ -205,26 +236,23 @@ def visualize_clusters(
 
 
 def evaluate_model(
-    model,
-    model_name,
-    used_dataset_id,
-    x_train_dataframe,
-    y_train_dataframe,
-    x_test_dataframe,
-    y_test_dataframe,
-    save_plots_flg=False,
-    plots_path="plots",
-    show_plot_flg=False,
+        model,
+        model_name,
+        used_dataset_id,
+        x_train_dataframe,
+        y_train_dataframe,
+        x_test_dataframe,
+        y_test_dataframe,
+        save_plots_flg=False,
+        plots_path="plots",
+        show_plot_flg=False,
 ):
     start_time = time.time()  # Start timing
     model.fit(x_train_dataframe)
     end_time = time.time()  # End timing
 
     # Print clustering time
-    print(
-        f"Clustering time: {
-            end_time - start_time:.2f} seconds"
-    )
+    print(f"Clustering time: {end_time - start_time:.2f} seconds")
 
     y_train_labels = model.labels_
 
@@ -241,37 +269,6 @@ def evaluate_model(
         )
 
 
-# Update load_dataset function to support larger datasets
-def load_large_dataset(dataset_id: int, n_samples: int = 100000) -> pd.DataFrame | None:
-    if dataset_id == DATASET_CIRCLES_ID:
-        x, y = make_circles(n_samples, factor=0.1, noise=0.1)
-        dataset = pd.DataFrame(x, columns=["Feature_1", "Feature_2"])
-        dataset["Label"] = y.astype(int)
-        return dataset
-
-    elif dataset_id == DATASET_BLOBS_ID:
-        n_samples_1 = int(n_samples * 0.6)
-        n_samples_2 = int(n_samples * 0.2)
-        n_samples_3 = n_samples - n_samples_1 - n_samples_2
-        centers = [[0.0, 0.0], [2.5, 2.5], [-2.5, -2.5]]
-        clusters_std = [1.5, 0.5, 1.0]
-        x, y = make_blobs(
-            n_samples=[n_samples_1, n_samples_2, n_samples_3],
-            centers=centers,
-            cluster_std=clusters_std,
-            random_state=0,
-            shuffle=False,
-        )
-        dataset = pd.DataFrame(x, columns=["Feature_1", "Feature_2"])
-        dataset["Label"] = y.astype(int)
-        return dataset
-    else:
-        func_name = inspect.currentframe().f_code.co_name
-        print(f"From {func_name}: can't load, unsupported dataset")
-
-    return None
-
-
 def grid_search_worker(X, params, iteration):
     eps, num_samples, metric, p = params
     dbscan_model = DBSCAN(eps=eps, min_samples=num_samples,
@@ -280,8 +277,8 @@ def grid_search_worker(X, params, iteration):
     num_clusters = len(set(labels)) - (1 if 1 in set(labels) else 0)
     score = silhouette_score(
         X, labels, metric=metric) if num_clusters >= 2 and num_clusters <= 25 else -20
-    print(f"Iteration {iteration}: eps={eps}, min_samples={num_samples}, metric={
-          metric}, p={p}, number of clusters={num_clusters}, score={score}")
+    print(
+        f"Iteration {iteration}: eps={eps}, min_samples={num_samples}, metric={metric}, p={p}, number of clusters={num_clusters}, score={score}")
     return params, score, num_clusters
 
 
@@ -319,6 +316,7 @@ if __name__ == "__main__":
     # dataset_id_for_use = DATASET_BLOBS_ID
 
     use_large_dataset_flg = False
+    run_reshuffled_flg = False
     run_grid_search_flg = False
 
     log_to_file_flag = False
@@ -357,8 +355,8 @@ if __name__ == "__main__":
 
     plot_dataset(dataset_id_for_use, dataframe, save_path=plots_save_path)
 
-    # TODO: Чи є розбиття стабiльним пiсля змiни порядку об’єктiв у множинi об’єктiв?
     # Shuffle the dataframe and split it into training and test sets
+    rand_seed_param = 10
     split_index = int(TRAIN_SPLIT_RATIO * len(dataframe))
     dataframe = dataframe.sample(
         frac=1, random_state=42).reset_index(drop=True)
@@ -370,8 +368,8 @@ if __name__ == "__main__":
     X_test_df, y_test_df = separate_dataset(test, "Label")
 
     model = DBSCAN()
-    model_name = f"DBSCAN_{model.metric}_{
-        model.eps}_{model.min_samples}_{model.p}"
+    print("Running default DBSCAN model")
+    model_name = f"DBSCAN_{model.metric}_{model.eps}_{model.min_samples}_{model.p}"
 
     print("\nModel:", model_name)
     print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
@@ -389,6 +387,31 @@ if __name__ == "__main__":
         plots_save_path,
         show_plot_flag,
     )
+
+    if run_reshuffled_flg:
+        print("\nReshuffling the data and running again\n")
+
+        reshuffled_data = dataframe.sample(frac=1, random_state=42 + rand_seed_param).reset_index(drop=True)
+        train = dataframe.iloc[:split_index]
+        X_train_df_reshuffled, y_train_df_reshuffled = separate_dataset(train, "Label")
+
+        print("\nModel:", model_name)
+        print("Dataset:", get_dataset_name_by_id(dataset_id_for_use) + "_RESHUFFLED")
+        # Evaluate the model
+        evaluate_model(
+            model,
+            model_name,
+            dataset_id_for_use,
+            X_train_df_reshuffled,
+            y_train_df_reshuffled,
+            X_test_df,
+            y_test_df,
+            save_plots_flag,
+            plots_save_path,
+            show_plot_flag,
+        )
+
+    print("\nRunning selected models")
 
     # Define selected parameter combinations for the 4 models
     selected_combinations = [
@@ -428,6 +451,24 @@ if __name__ == "__main__":
             show_plot_flag
         )
 
+        if run_reshuffled_flg:
+            print("\nModel:", model_name)
+            print("Dataset:", get_dataset_name_by_id(dataset_id_for_use) + "_RESHUFFLED")
+
+            # Evaluate the model using the evaluate_model function
+            evaluate_model(
+                new_model,
+                model_name,
+                dataset_id_for_use,
+                X_train_df_reshuffled,
+                y_train_df_reshuffled,
+                X_test_df,
+                y_test_df,
+                save_plots_flag,
+                plots_save_path,
+                show_plot_flag
+            )
+
     if run_grid_search_flg:
         # Define parameter ranges
         epsilon = np.linspace(0.01, 1, num=20)
@@ -454,12 +495,11 @@ if __name__ == "__main__":
         # Assuming X_train_df is your data
         best_params = GridSearch(X_train_df, combinations)
         print("\nBest Silhouette score:", best_params["best_score"])
-        print(f"Best params:\nmetric={best_params['best_metric']}\neps={
-            best_params['best_epsilon']}\nmin_samples={best_params['best_min_samples']}\np={best_params['best_p']}")
+        print(
+            f"Best params:\nmetric={best_params['best_metric']}\neps={best_params['best_epsilon']}\nmin_samples={best_params['best_min_samples']}\np={best_params['best_p']}")
 
         # Create the best model name based on the best parameters from GridSearch
-        best_model_name = f"DBSCAN_{best_params['best_metric']}_{best_params['best_epsilon']}_{
-            best_params['best_min_samples']}_{best_params['best_p']}"
+        best_model_name = f"DBSCAN_{best_params['best_metric']}_{best_params['best_epsilon']}_{best_params['best_min_samples']}_{best_params['best_p']}"
 
         # Print the model name and dataset information
         print("\nModel:", best_model_name)
