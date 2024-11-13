@@ -22,7 +22,7 @@ from sklearn.model_selection import GridSearchCV
 DATASET_CIRCLES_ID = 1
 DATASET_BLOBS_ID = 2
 
-TRAIN_SPLIT_RATIO = 1
+TRAIN_SPLIT_RATIO = 0.9
 
 
 def get_dataset_name_by_id(dataset_id: int) -> str | None:
@@ -130,30 +130,6 @@ def separate_dataset(df, target):
     return x, y
 
 
-# TODO: rewrite for cluster
-def check_overfitting(model, x_train, y_train, x_test, y_test, model_name):
-    y_train_prediction = model.predict(x_train)
-    train_accuracy = accuracy_score(y_train, y_train_prediction)
-
-    y_test_prediction = model.predict(x_test)
-    test_accuracy = accuracy_score(y_test, y_test_prediction)
-    eps = 0.05
-    print(f"Check overfitting for {model_name} with correlation level {eps}:")
-    if (train_accuracy - test_accuracy) > eps:
-        print(
-            "Possible overfitting: accuracy on training data is higher than on test data"
-        )
-    else:
-        print(
-            "No overfitting detected: accuracy on training data is approximately equal to accuracy on test data"
-        )
-
-    print(f"Train Accuracy: {train_accuracy:.2f}")
-    print(f"Test Accuracy: {test_accuracy:.2f}")
-    print("-" * 40)
-
-
-# TODO: finish this method
 def metrics_report(x_train, y_train, y_train_real):
     # Check for noisy points (labeled as -1)
     n_noise = list(y_train).count(-1)
@@ -213,67 +189,6 @@ def grid_search_hyperparameters(models, param_grid, x_train, y_train):
         print(f"End Grid Search for {model_name}")
 
     return best_estimators
-
-
-def plot_decision_boundary_helper(
-    x,
-    y,
-    model,
-    x_label,
-    y_label,
-    title,
-    filename="decision_boundary.png",
-    save_plot=True,
-    save_path="plots",
-    show_plot=False,
-):
-    plt.figure(figsize=(8, 6))
-    x0, x1 = x[:, 0], x[:, 1]
-
-    # Plot decision boundary
-    DecisionBoundaryDisplay.from_estimator(
-        model,
-        x,
-        response_method="predict",
-        cmap="coolwarm",
-        alpha=0.75,
-        ax=plt.gca(),
-        xlabel=x_label,
-        ylabel=y_label,
-    )
-    plt.scatter(x0, x1, c=y, cmap="coolwarm", edgecolors="k")
-    plt.title(title)
-
-    if save_plot:
-        os.makedirs(save_path, exist_ok=True)
-        save_file = os.path.join(save_path, filename)
-        plt.savefig(save_file)
-        print(f"Plot saved at: {save_file}")
-
-    if show_plot:
-        plt.show()
-    plt.close()
-
-
-# TODO: implement
-def plot_boundaries(
-    dataset_id,
-    x,
-    y,
-    model,
-    model_name,
-    filename="decision_boundary.png",
-    save_plot=True,
-    save_path="plots",
-    show_plot=False,
-):
-    if dataset_id == DATASET_CIRCLES_ID:
-        pass
-    elif dataset_id == DATASET_BLOBS_ID:
-        pass
-    else:
-        func_name = inspect.currentframe().f_code.co_name
-        print(f"From {func_name}: can't plot, unsupported dataset or dimensions")
 
 
 def visualize_clusters(
