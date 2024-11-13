@@ -1,5 +1,6 @@
 import itertools
 import inspect
+import multiprocessing
 import os
 import shutil
 import sys
@@ -18,7 +19,7 @@ from sklearn.metrics import silhouette_score
 DATASET_CIRCLES_ID = 1
 DATASET_BLOBS_ID = 2
 
-TRAIN_SPLIT_RATIO = 0.9
+TRAIN_SPLIT_RATIO = 1  # because of clustering
 
 
 def get_dataset_name_by_id(dataset_id: int) -> str | None:
@@ -121,7 +122,7 @@ def separate_dataset(df, target):
     return x, y
 
 
-def metrics_report(x_train, y_train, y_train_real):
+def metrics_report(x_train, y_train, y_train_real, metric):
     # Check for noisy points (labeled as -1)
     n_noise = list(y_train).count(-1)
     print(f"Number of noise points: {n_noise}")
@@ -140,7 +141,7 @@ def metrics_report(x_train, y_train, y_train_real):
 
     # Calculate Silhouette Score (only if more than 1 cluster and not all are noise)
     if len(set(y_train) - {-1}) > 1:
-        silhouette_avg = silhouette_score(x_train, y_train)
+        silhouette_avg = silhouette_score(x_train, y_train, metric=metric)
         print(f"Silhouette Score: {silhouette_avg:.2f}")
     else:
         silhouette_avg = None
@@ -227,7 +228,8 @@ def evaluate_model(
 
     y_train_labels = model.labels_
 
-    metrics_report(x_train_dataframe, y_train_labels, y_train_dataframe)
+    metrics_report(x_train_dataframe, y_train_labels,
+                   y_train_dataframe, model.metric)
 
     if save_plots_flg:
         visualize_clusters(
@@ -240,7 +242,7 @@ def evaluate_model(
 
 
 # Update load_dataset function to support larger datasets
-def load_large_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame | None:
+def load_large_dataset(dataset_id: int, n_samples: int = 100000) -> pd.DataFrame | None:
     if dataset_id == DATASET_CIRCLES_ID:
         x, y = make_circles(n_samples, factor=0.1, noise=0.1)
         dataset = pd.DataFrame(x, columns=["Feature_1", "Feature_2"])
@@ -270,34 +272,26 @@ def load_large_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame 
     return None
 
 
-def GridSearch(X, combinations):
-    scores = []
-    all_labels = []
+def grid_search_worker(X, params, iteration):
+    eps, num_samples, metric, p = params
+    dbscan_model = DBSCAN(eps=eps, min_samples=num_samples,
+                          metric=metric, p=p).fit(X)
+    labels = dbscan_model.labels_
+    num_clusters = len(set(labels)) - (1 if 1 in set(labels) else 0)
+    score = silhouette_score(
+        X, labels, metric=metric) if num_clusters >= 2 and num_clusters <= 25 else -20
+    print(f"Iteration {iteration}: eps={eps}, min_samples={num_samples}, metric={
+          metric}, p={p}, number of clusters={num_clusters}, score={score}")
+    return params, score, num_clusters
 
+
+def GridSearch(X, combinations):
     print("Start grid search for DBSCAN...")
     search_start_time = time.time()
 
-    for i, (eps, num_samples, metric, p) in enumerate(combinations):
-        dbscan_model = DBSCAN(
-            eps=eps, min_samples=num_samples, metric=metric, p=p).fit(X)
-        labels = dbscan_model.labels_
-        labels_set = set(labels)
-
-        num_clusters = len(labels_set)
-        if 1 in labels_set:
-            num_clusters -= 1
-
-        if num_clusters < 2 or num_clusters > 25:
-            scores.append(-20)
-            all_labels.append("Poor")
-            print(f"At iteration {i}, eps={eps}, min_samples={
-                num_samples}, number of clusters={num_clusters}. Moving on...")
-            continue
-
-        scores.append(silhouette_score(X, labels))
-        all_labels.append(labels)
-        print(f"At iteration {i}, score={silhouette_score(
-            X, labels)}, number of clusters={num_clusters}")
+    with multiprocessing.Pool() as pool:
+        results = pool.starmap(grid_search_worker, [(
+            X, params, i) for i, params in enumerate(combinations)])
 
     search_end_time = time.time()
     print("End grid search for DBSCAN")
@@ -305,21 +299,27 @@ def GridSearch(X, combinations):
     time_taken = search_end_time - search_start_time
     print(f"Time taken for GridSearchCV: {time_taken:.2f} seconds")
 
+    scores = [result[1] for result in results]
+    num_clusters = [result[2] for result in results]
     best_index = np.argmax(scores)
-    best_parameters = combinations[best_index]
+    best_params = combinations[best_index]
 
     return {
-        'best_epsilon': best_parameters[0],
-        'best_min_samples': best_parameters[1],
-        'best_metric': best_parameters[2],
-        'best_p': best_parameters[3],
-        'best_score': scores[best_index]
+        'best_epsilon': best_params[0],
+        'best_min_samples': best_params[1],
+        'best_metric': best_params[2],
+        'best_p': best_params[3],
+        'best_score': scores[best_index],
+        'num_clusters': num_clusters[best_index]
     }
 
 
 if __name__ == "__main__":
     dataset_id_for_use = DATASET_CIRCLES_ID
     # dataset_id_for_use = DATASET_BLOBS_ID
+
+    use_large_dataset_flg = False
+    run_grid_search_flg = False
 
     log_to_file_flag = False
     log_path = "output_log.txt"
@@ -338,9 +338,12 @@ if __name__ == "__main__":
 
     if save_plots_flag:
         if dataset_id_for_use == DATASET_BLOBS_ID:
-            plots_save_path = "plots/blobs_dataset"
+            plots_save_path = os.path.join(plots_save_path, "blobs_dataset")
         elif dataset_id_for_use == DATASET_CIRCLES_ID:
-            plots_save_path = "plots/circles_dataset"
+            plots_save_path = os.path.join(plots_save_path, "circles_dataset")
+
+        if use_large_dataset_flg:
+            plots_save_path += "_large"
 
     if save_plots_flag:
         if os.path.exists(plots_save_path):
@@ -349,8 +352,11 @@ if __name__ == "__main__":
         os.makedirs(plots_save_path, exist_ok=True)
 
     # Load the dataset
-    dataframe = load_dataset(dataset_id_for_use)
+    dataframe = load_large_dataset(
+        dataset_id_for_use) if use_large_dataset_flg else load_dataset(dataset_id_for_use)
+
     plot_dataset(dataset_id_for_use, dataframe, save_path=plots_save_path)
+
     # TODO: Чи є розбиття стабiльним пiсля змiни порядку об’єктiв у множинi об’єктiв?
     # Shuffle the dataframe and split it into training and test sets
     split_index = int(TRAIN_SPLIT_RATIO * len(dataframe))
@@ -386,10 +392,10 @@ if __name__ == "__main__":
 
     # Define selected parameter combinations for the 4 models
     selected_combinations = [
-        (0.01, 5, 'euclidean', 1),
-        (0.25, 10, 'cosine', 2),
-        (0.5, 15, 'minkowski', 3),
-        (0.25, 5, 'chebyshev', 2)
+        (0.05, 4, 'euclidean', None),
+        (0.1, 8, 'cosine', None),
+        (0.05, 4, 'minkowski', 4),
+        (0.1, 8, 'chebyshev', None)
     ]
 
     # Loop through the selected combinations, apply DBSCAN, and evaluate them
@@ -422,51 +428,64 @@ if __name__ == "__main__":
             show_plot_flag
         )
 
-    # Example usage
-    epsilon = np.linspace(0.01, 1, num=20)
-    min_samples = np.arange(2, 25, step=2)
-    metric = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
-    p = np.arange(1, 10, step=1)
+    if run_grid_search_flg:
+        # Define parameter ranges
+        epsilon = np.linspace(0.01, 1, num=20)
+        min_samples = np.arange(2, 25, step=2)
+        metric = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
+        p_values = np.arange(3, 25, step=1)
 
-    combinations = list(itertools.product(epsilon, min_samples, metric, p))
-    N = len(combinations)
-    print(f"Total combinations: {N}")
+        # Prepare combinations of parameters, applying p only for 'minkowski'
+        combinations = []
 
-    # Assuming X_train_df is your data
-    best_params = GridSearch(X_train_df, combinations)
-    print("Best Silhouette score:", best_params["best_score"])
-    print(f"Best params:\nmetric={best_params['best_metric']}\neps={
-          best_params['best_epsilon']}\nmin_samples={best_params['best_min_samples']}\np={best_params['best_p']}")
+        for m in metric:
+            if m == 'minkowski':
+                # For Minkowski, p values are applied
+                for eps, min_sample, p in itertools.product(epsilon, min_samples, p_values):
+                    combinations.append((eps, min_sample, m, p))
+            else:
+                # For other metrics, p is set to None
+                for eps, min_sample in itertools.product(epsilon, min_samples):
+                    combinations.append((eps, min_sample, m, None))
 
-    # Create the best model name based on the best parameters from GridSearch
-    best_model_name = f"DBSCAN_{best_params['best_metric']}_{best_params['best_epsilon']}_{
-        best_params['best_min_samples']}_{best_params['best_p']}"
+        N = len(combinations)
+        print(f"\nTotal combinations: {N}")
 
-    # Print the model name and dataset information
-    print("\nModel:", best_model_name)
-    print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+        # Assuming X_train_df is your data
+        best_params = GridSearch(X_train_df, combinations)
+        print("\nBest Silhouette score:", best_params["best_score"])
+        print(f"Best params:\nmetric={best_params['best_metric']}\neps={
+            best_params['best_epsilon']}\nmin_samples={best_params['best_min_samples']}\np={best_params['best_p']}")
 
-    # Recreate the best DBSCAN model using the best parameters
-    best_model = DBSCAN(
-        eps=best_params['best_epsilon'],
-        min_samples=best_params['best_min_samples'],
-        metric=best_params['best_metric'],
-        p=best_params['best_p']
-    )
+        # Create the best model name based on the best parameters from GridSearch
+        best_model_name = f"DBSCAN_{best_params['best_metric']}_{best_params['best_epsilon']}_{
+            best_params['best_min_samples']}_{best_params['best_p']}"
 
-    # Evaluate the model
-    evaluate_model(
-        best_model,
-        best_model_name,
-        dataset_id_for_use,
-        X_train_df,
-        y_train_df,
-        X_test_df,
-        y_test_df,
-        save_plots_flag,
-        plots_save_path,
-        show_plot_flag,
-    )
+        # Print the model name and dataset information
+        print("\nModel:", best_model_name)
+        print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+
+        # Recreate the best DBSCAN model using the best parameters
+        best_model = DBSCAN(
+            eps=best_params['best_epsilon'],
+            min_samples=best_params['best_min_samples'],
+            metric=best_params['best_metric'],
+            p=best_params['best_p']
+        )
+
+        # Evaluate the model
+        evaluate_model(
+            best_model,
+            best_model_name,
+            dataset_id_for_use,
+            X_train_df,
+            y_train_df,
+            X_test_df,
+            y_test_df,
+            save_plots_flag,
+            plots_save_path,
+            show_plot_flag,
+        )
 
     if log_to_file_flag:
         log_file.close()
