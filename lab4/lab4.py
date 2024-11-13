@@ -1,3 +1,4 @@
+import itertools
 import inspect
 import os
 import shutil
@@ -12,7 +13,7 @@ from sklearn.datasets._samples_generator import make_blobs
 from sklearn.datasets._samples_generator import make_circles
 from sklearn.metrics import adjusted_mutual_info_score
 from sklearn.metrics import silhouette_score, adjusted_rand_score
-from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import silhouette_score
 
 DATASET_CIRCLES_ID = 1
 DATASET_BLOBS_ID = 2
@@ -146,41 +147,6 @@ def metrics_report(x_train, y_train, y_train_real):
         print("Silhouette Score cannot be calculated (only one cluster found).")
 
 
-def grid_search_hyperparameters(models, param_grid, x_train, y_train):
-    best_estimators = {}
-
-    for model_name, model in models.items():
-        print(f"\nStarting Grid Search for {model_name}...")
-
-        # Conduct grid search with cross-validation
-        grid_search = GridSearchCV(
-            model, param_grid[model_name], cv=5, scoring="accuracy"
-        )
-        grid_search.fit(x_train, y_train)
-
-        best_estimator = grid_search.best_estimator_
-        best_params = grid_search.best_params_
-        best_cross_valid_accuracy = grid_search.best_score_
-
-        # Create a unique key based on best parameters
-        layer_structure = best_params.get("hidden_layer_sizes", "NA")
-        learning_rate = best_params.get("learning_rate_init", "NA")
-        alpha_value = best_params.get("alpha", "NA")
-        new_key_name = f"Best_MLPClassifier_Layers{
-            layer_structure}_LR{learning_rate}_Alpha{alpha_value}"
-
-        # Store the best estimator information
-        best_estimators[new_key_name] = [
-            best_estimator,
-            best_params,
-            best_cross_valid_accuracy,
-        ]
-
-        print(f"End Grid Search for {model_name}")
-
-    return best_estimators
-
-
 def visualize_clusters(
     x_train, y_train_labels, model_name, save_path="plots", show_plot=False
 ):
@@ -304,9 +270,56 @@ def load_large_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame 
     return None
 
 
+def GridSearch(X, combinations):
+    scores = []
+    all_labels = []
+
+    print("Start grid search for DBSCAN...")
+    search_start_time = time.time()
+
+    for i, (eps, num_samples, metric, p) in enumerate(combinations):
+        dbscan_model = DBSCAN(
+            eps=eps, min_samples=num_samples, metric=metric, p=p).fit(X)
+        labels = dbscan_model.labels_
+        labels_set = set(labels)
+
+        num_clusters = len(labels_set)
+        if 1 in labels_set:
+            num_clusters -= 1
+
+        if num_clusters < 2 or num_clusters > 25:
+            scores.append(-20)
+            all_labels.append("Poor")
+            print(f"At iteration {i}, eps={eps}, min_samples={
+                num_samples}, number of clusters={num_clusters}. Moving on...")
+            continue
+
+        scores.append(silhouette_score(X, labels))
+        all_labels.append(labels)
+        print(f"At iteration {i}, score={silhouette_score(
+            X, labels)}, number of clusters={num_clusters}")
+
+    search_end_time = time.time()
+    print("End grid search for DBSCAN")
+
+    time_taken = search_end_time - search_start_time
+    print(f"Time taken for GridSearchCV: {time_taken:.2f} seconds")
+
+    best_index = np.argmax(scores)
+    best_parameters = combinations[best_index]
+
+    return {
+        'best_epsilon': best_parameters[0],
+        'best_min_samples': best_parameters[1],
+        'best_metric': best_parameters[2],
+        'best_p': best_parameters[3],
+        'best_score': scores[best_index]
+    }
+
+
 if __name__ == "__main__":
-    # dataset_id_for_use = DATASET_CIRCLES_ID
-    dataset_id_for_use = DATASET_BLOBS_ID
+    dataset_id_for_use = DATASET_CIRCLES_ID
+    # dataset_id_for_use = DATASET_BLOBS_ID
 
     log_to_file_flag = False
     log_path = "output_log.txt"
@@ -371,109 +384,90 @@ if __name__ == "__main__":
         show_plot_flag,
     )
 
-    # # Define parameter values to test
-    # eps_values = [0.1, 0.25, 0.5]
-    # min_samples_values = [5, 10, 15]
-    # metrics = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
-    # p_values = [1, 2, 3]
+    # Define selected parameter combinations for the 4 models
+    selected_combinations = [
+        (0.01, 5, 'euclidean', 1),
+        (0.25, 10, 'cosine', 2),
+        (0.5, 15, 'minkowski', 3),
+        (0.25, 5, 'chebyshev', 2)
+    ]
 
-    # # Prepare combinations of parameters
-    # param_combinations = list(product(
-    #     eps_values, min_samples_values, metrics, p_values))
-
-    # # Loop through each combination, apply DBSCAN, and evaluate it
-    # for eps, min_samples, metric, p in param_combinations:
-    #     # Create a new DBSCAN model with the current combination of parameters
-    #     new_model = DBSCAN(
-    #         eps=eps,
-    #         min_samples=min_samples,
-    #         metric=metric,
-    #         p=p
-    #     )
-    #     model_name = f"DBSCAN_{metric}_{eps}_{min_samples}_{p}"
-
-    #     print("\nModel:", model_name)
-    #     print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
-
-    #     # Evaluate the model using the evaluate_model function
-    #     evaluate_model(
-    #         new_model,
-    #         model_name,
-    #         dataset_id_for_use,
-    #         X_train_df,
-    #         y_train_df,
-    #         X_test_df,
-    #         y_test_df,
-    #         save_plots_flag,
-    #         plots_save_path,
-    #         show_plot_flag
-    #     )
-
-    # Define hyperparameter grids for each classifier
-    # TODO: grid search on eps, min_samples and other params except metrics
-    """
-    param_grids = {
-        "MLPClassifier_3": {
-            "hidden_layer_sizes": [(3,), (5,), (10,)],
-            "learning_rate_init": [0.001, 0.01, 0.1],
-            "alpha": [0.0001, 0.001, 0.01],
-        },
-        "MLPClassifier_3_3_3": {
-            "hidden_layer_sizes": [
-                (
-                    3,
-                    3,
-                    3,
-                ),
-                (
-                    5,
-                    5,
-                    5,
-                ),
-                (
-                    10,
-                    10,
-                    10,
-                ),
-            ],
-            "learning_rate_init": [0.001, 0.01],
-            "alpha": [0.0001, 0.001],
-        },
-    }
-
-    # Perform grid search for hyperparameters
-    best_classifiers = grid_search_hyperparameters(
-        classifiers, param_grids, X_train_df, y_train_df
-    )
-
-    # best_classifiers to predict and evaluate performance
-    for best_classifier_name, [
-        best_classifier,
-        best_parameters,
-        best_cross_validation_accuracy,
-    ] in best_classifiers.items():
-        print(f"\nEvaluating Best Model: {best_classifier_name}")
-        print(
-            f"Best parameters for {best_classifier_name.__class__.__name__}: {best_parameters}"
+    # Loop through the selected combinations, apply DBSCAN, and evaluate them
+    for eps, min_samples, metric, p in selected_combinations:
+        # Create a new DBSCAN model with the current combination of parameters
+        new_model = DBSCAN(
+            eps=eps,
+            min_samples=min_samples,
+            metric=metric,
+            p=p
         )
-        print(
-            f"Best cross-validated accuracy: {best_cross_validation_accuracy:.4f}")
-        print("Dataset:", "rand" if dataset_id_for_use ==
-                                    DATASET_RAND_ID else "digits")
 
+        # Create the model name based on the parameters
+        model_name = f"DBSCAN_{metric}_{eps}_{min_samples}_{p}"
+
+        print("\nModel:", model_name)
+        print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+
+        # Evaluate the model using the evaluate_model function
         evaluate_model(
-            best_classifier,
-            best_classifier_name,
+            new_model,
+            model_name,
+            dataset_id_for_use,
             X_train_df,
             y_train_df,
             X_test_df,
             y_test_df,
-            dataset_id_for_use,
             save_plots_flag,
             plots_save_path,
-            show_plot_flag,
+            show_plot_flag
         )
-    """
+
+    # Example usage
+    epsilon = np.linspace(0.01, 1, num=20)
+    min_samples = np.arange(2, 25, step=2)
+    metric = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
+    p = np.arange(1, 10, step=1)
+
+    combinations = list(itertools.product(epsilon, min_samples, metric, p))
+    N = len(combinations)
+    print(f"Total combinations: {N}")
+
+    # Assuming X_train_df is your data
+    best_params = GridSearch(X_train_df, combinations)
+    print("Best Silhouette score:", best_params["best_score"])
+    print(f"Best params:\nmetric={best_params['best_metric']}\neps={
+          best_params['best_epsilon']}\nmin_samples={best_params['best_min_samples']}\np={best_params['best_p']}")
+
+    # Create the best model name based on the best parameters from GridSearch
+    best_model_name = f"DBSCAN_{best_params['best_metric']}_{best_params['best_epsilon']}_{
+        best_params['best_min_samples']}_{best_params['best_p']}"
+
+    # Print the model name and dataset information
+    print("\nModel:", best_model_name)
+    print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+
+    # Recreate the best DBSCAN model using the best parameters
+    best_model = DBSCAN(
+        eps=best_params['best_epsilon'],
+        min_samples=best_params['best_min_samples'],
+        metric=best_params['best_metric'],
+        p=best_params['best_p']
+    )
+
+    # Evaluate the model
+    evaluate_model(
+        best_model,
+        best_model_name,
+        dataset_id_for_use,
+        X_train_df,
+        y_train_df,
+        X_test_df,
+        y_test_df,
+        save_plots_flag,
+        plots_save_path,
+        show_plot_flag,
+    )
+
     if log_to_file_flag:
         log_file.close()
         sys.stdout = original_stdout
