@@ -1,5 +1,4 @@
 import inspect
-from itertools import product
 import os
 import shutil
 import sys
@@ -11,11 +10,7 @@ from matplotlib import pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.datasets._samples_generator import make_blobs
 from sklearn.datasets._samples_generator import make_circles
-from sklearn.inspection import DecisionBoundaryDisplay
-from sklearn.metrics import (
-    accuracy_score,
-    adjusted_mutual_info_score,
-)
+from sklearn.metrics import adjusted_mutual_info_score
 from sklearn.metrics import silhouette_score, adjusted_rand_score
 from sklearn.model_selection import GridSearchCV
 
@@ -75,11 +70,12 @@ def plot_dataset(
         os.makedirs(save_path, exist_ok=True)
 
     # Set up the plot properties
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 10))
     plt.xlabel("Feature 1")
     plt.ylabel("Feature 2")
     plt.title("Circles Dataset" if dataset_id ==
               DATASET_CIRCLES_ID else "Blobs Dataset")
+    plt.grid(True, color="grey", linestyle="--", linewidth=0.5)
 
     # Configure plot-specific settings
     if dataset_id == DATASET_CIRCLES_ID:
@@ -102,9 +98,6 @@ def plot_dataset(
         func_name = inspect.currentframe().f_code.co_name
         print(f"From {func_name}: can't plot, unsupported dataset")
         return
-
-    # Add colorbar
-    plt.colorbar(label="Label")
 
     # Save the plot if required
     if save_plot:
@@ -192,7 +185,7 @@ def visualize_clusters(
     x_train, y_train_labels, model_name, save_path="plots", show_plot=False
 ):
     """Enhanced visualization for DBSCAN clustering."""
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(10, 10))
     unique_labels = set(y_train_labels)
 
     # Use a color map for better differentiation
@@ -219,7 +212,7 @@ def visualize_clusters(
             xy[:, 0],
             xy[:, 1],
             c=[col],
-            edgecolor="k",
+            edgecolor="k" if marker != "x" else None,
             s=50,
             alpha=alpha,
             label=label,
