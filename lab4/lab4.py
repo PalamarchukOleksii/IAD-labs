@@ -70,31 +70,27 @@ def plot_dataset(
     save_path="plots",
     show_plot=False,
 ):
+    # Create the directory for saving plots if needed
     if save_plot:
         os.makedirs(save_path, exist_ok=True)
 
+    # Set up the plot properties
+    plt.figure(figsize=(8, 6))
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.title("Circles Dataset" if dataset_id ==
+              DATASET_CIRCLES_ID else "Blobs Dataset")
+
+    # Configure plot-specific settings
     if dataset_id == DATASET_CIRCLES_ID:
-        plt.figure(figsize=(8, 6))
         plt.scatter(
             df["Feature_1"],
             df["Feature_2"],
+            c=df["Label"],
             cmap="coolwarm",
             edgecolor="k",
         )
-        plt.title("Circles Dataset")
-        plt.xlabel("Feature 1")
-        plt.ylabel("Feature 2")
-        plt.colorbar(label="Label")
-
-        if save_plot:
-            circles_path = save_path
-            os.makedirs(circles_path, exist_ok=True)
-            filename = os.path.join(circles_path, "dataset_plot.png")
-            plt.savefig(filename)
-            print(f"Plot saved at: {filename}")
-
     elif dataset_id == DATASET_BLOBS_ID:
-        plt.figure(figsize=(8, 6))
         plt.scatter(
             df["Feature_1"],
             df["Feature_2"],
@@ -102,24 +98,25 @@ def plot_dataset(
             cmap="viridis",
             edgecolor="k",
         )
-        plt.title("Blobs Dataset")
-        plt.xlabel("Feature 1")
-        plt.ylabel("Feature 2")
-        plt.colorbar(label="Label")
-
-        if save_plot:
-            blobs_path = save_path
-            os.makedirs(blobs_path, exist_ok=True)
-            filename = os.path.join(blobs_path, "dataset_plot.png")
-            plt.savefig(filename)
-            print(f"Plot saved at: {filename}")
     else:
         func_name = inspect.currentframe().f_code.co_name
         print(f"From {func_name}: can't plot, unsupported dataset")
         return
 
+    # Add colorbar
+    plt.colorbar(label="Label")
+
+    # Save the plot if required
+    if save_plot:
+        filename = os.path.join(save_path, "dataset_plot.png")
+        plt.savefig(filename)
+        print(f"Plot saved at: {filename}")
+
+    # Show plot if requested
     if show_plot:
         plt.show()
+
+    # Close the plot
     plt.close()
 
 
@@ -315,8 +312,8 @@ def load_large_dataset(dataset_id: int, n_samples: int = 10000) -> pd.DataFrame 
 
 
 if __name__ == "__main__":
-    dataset_id_for_use = DATASET_CIRCLES_ID
-    # dataset_id_for_use = DATASET_BLOBS_ID
+    # dataset_id_for_use = DATASET_CIRCLES_ID
+    dataset_id_for_use = DATASET_BLOBS_ID
 
     log_to_file_flag = False
     log_path = "output_log.txt"
@@ -381,43 +378,43 @@ if __name__ == "__main__":
         show_plot_flag,
     )
 
-    # Define parameter values to test
-    eps_values = [0.1, 0.25, 0.5]
-    min_samples_values = [5, 10, 15]
-    metrics = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
-    p_values = [1, 2, 3]
+    # # Define parameter values to test
+    # eps_values = [0.1, 0.25, 0.5]
+    # min_samples_values = [5, 10, 15]
+    # metrics = ['euclidean', 'cosine', 'minkowski', 'chebyshev']
+    # p_values = [1, 2, 3]
 
-    # Prepare combinations of parameters
-    param_combinations = list(product(
-        eps_values, min_samples_values, metrics, p_values))
+    # # Prepare combinations of parameters
+    # param_combinations = list(product(
+    #     eps_values, min_samples_values, metrics, p_values))
 
-    # Loop through each combination, apply DBSCAN, and evaluate it
-    for eps, min_samples, metric, p in param_combinations:
-        # Create a new DBSCAN model with the current combination of parameters
-        new_model = DBSCAN(
-            eps=eps,
-            min_samples=min_samples,
-            metric=metric,
-            p=p
-        )
-        model_name = f"DBSCAN_{metric}_{eps}_{min_samples}_{p}"
+    # # Loop through each combination, apply DBSCAN, and evaluate it
+    # for eps, min_samples, metric, p in param_combinations:
+    #     # Create a new DBSCAN model with the current combination of parameters
+    #     new_model = DBSCAN(
+    #         eps=eps,
+    #         min_samples=min_samples,
+    #         metric=metric,
+    #         p=p
+    #     )
+    #     model_name = f"DBSCAN_{metric}_{eps}_{min_samples}_{p}"
 
-        print("\nModel:", model_name)
-        print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
+    #     print("\nModel:", model_name)
+    #     print("Dataset:", get_dataset_name_by_id(dataset_id_for_use))
 
-        # Evaluate the model using the evaluate_model function
-        evaluate_model(
-            new_model,
-            model_name,
-            dataset_id_for_use,
-            X_train_df,
-            y_train_df,
-            X_test_df,
-            y_test_df,
-            save_plots_flag,
-            plots_save_path,
-            show_plot_flag
-        )
+    #     # Evaluate the model using the evaluate_model function
+    #     evaluate_model(
+    #         new_model,
+    #         model_name,
+    #         dataset_id_for_use,
+    #         X_train_df,
+    #         y_train_df,
+    #         X_test_df,
+    #         y_test_df,
+    #         save_plots_flag,
+    #         plots_save_path,
+    #         show_plot_flag
+    #     )
 
     # Define hyperparameter grids for each classifier
     # TODO: grid search on eps, min_samples and other params except metrics
