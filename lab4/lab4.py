@@ -274,7 +274,7 @@ def grid_search_worker(X, params, iteration):
     dbscan_model = DBSCAN(eps=eps, min_samples=num_samples,
                           metric=metric, p=p).fit(X)
     labels = dbscan_model.labels_
-    num_clusters = len(set(labels)) - (1 if 1 in set(labels) else 0)
+    num_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     score = silhouette_score(
         X, labels, metric=metric) if num_clusters >= 2 and num_clusters <= 25 else -20
     print(
@@ -312,12 +312,12 @@ def GridSearch(X, combinations):
 
 
 if __name__ == "__main__":
-    dataset_id_for_use = DATASET_CIRCLES_ID
-    # dataset_id_for_use = DATASET_BLOBS_ID
+    # dataset_id_for_use = DATASET_CIRCLES_ID
+    dataset_id_for_use = DATASET_BLOBS_ID
 
-    use_large_dataset_flg = False
-    run_reshuffled_flg = False
-    run_grid_search_flg = False
+    use_large_dataset_flg = True
+    run_reshuffled_flg = True
+    run_grid_search_flg = True
 
     log_to_file_flag = False
     log_path = "output_log.txt"
@@ -393,8 +393,15 @@ if __name__ == "__main__":
         plots_save_path += "_reshuffled"
 
         reshuffled_data = dataframe.sample(frac=1, random_state=42 + rand_seed_param).reset_index(drop=True)
-        train = dataframe.iloc[:split_index]
+
+        plot_dataset(dataset_id_for_use, reshuffled_data, save_path=plots_save_path)
+
+        train = reshuffled_data.iloc[:split_index]
+        test = reshuffled_data.iloc[split_index:]
+
+        # Separate dataset into features and labels
         X_train_df_reshuffled, y_train_df_reshuffled = separate_dataset(train, "Label")
+        X_test_df_reshuffled, y_test_df_reshuffled = separate_dataset(test, "Label")
 
         print("\nModel:", model_name)
         print("Dataset:", get_dataset_name_by_id(dataset_id_for_use) + "_RESHUFFLED")
@@ -405,14 +412,14 @@ if __name__ == "__main__":
             dataset_id_for_use,
             X_train_df_reshuffled,
             y_train_df_reshuffled,
-            X_test_df,
-            y_test_df,
+            X_test_df_reshuffled,
+            y_test_df_reshuffled,
             save_plots_flag,
             plots_save_path,
             show_plot_flag,
         )
 
-        plots_save_path -= "_reshuffled"
+        plots_save_path = plots_save_path.replace("_reshuffled", "")
 
     print("\nRunning selected models")
 
@@ -466,14 +473,14 @@ if __name__ == "__main__":
                 dataset_id_for_use,
                 X_train_df_reshuffled,
                 y_train_df_reshuffled,
-                X_test_df,
-                y_test_df,
+                X_test_df_reshuffled,
+                y_test_df_reshuffled,
                 save_plots_flag,
                 plots_save_path,
                 show_plot_flag
             )
 
-            plots_save_path -= "_reshuffled"
+            plots_save_path = plots_save_path.replace("_reshuffled", "")
 
     if run_grid_search_flg:
         # Define parameter ranges
