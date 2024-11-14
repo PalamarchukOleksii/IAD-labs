@@ -343,9 +343,6 @@ if __name__ == "__main__":
         if use_large_dataset_flg:
             plots_save_path += "_large"
 
-        if run_reshuffled_flg:
-            plots_save_path += "_reshuffled"
-
     if save_plots_flag:
         if os.path.exists(plots_save_path):
             shutil.rmtree(plots_save_path)  # Remove existing plots directory
@@ -393,6 +390,7 @@ if __name__ == "__main__":
 
     if run_reshuffled_flg:
         print("\nReshuffling the data and running again\n")
+        plots_save_path += "_reshuffled"
 
         reshuffled_data = dataframe.sample(frac=1, random_state=42 + rand_seed_param).reset_index(drop=True)
         train = dataframe.iloc[:split_index]
@@ -413,6 +411,8 @@ if __name__ == "__main__":
             plots_save_path,
             show_plot_flag,
         )
+
+        plots_save_path -= "_reshuffled"
 
     print("\nRunning selected models")
 
@@ -457,6 +457,7 @@ if __name__ == "__main__":
         if run_reshuffled_flg:
             print("\nModel:", model_name)
             print("Dataset:", get_dataset_name_by_id(dataset_id_for_use) + "_RESHUFFLED")
+            plots_save_path += "_reshuffled"
 
             # Evaluate the model using the evaluate_model function
             evaluate_model(
@@ -471,6 +472,8 @@ if __name__ == "__main__":
                 plots_save_path,
                 show_plot_flag
             )
+
+            plots_save_path -= "_reshuffled"
 
     if run_grid_search_flg:
         # Define parameter ranges
