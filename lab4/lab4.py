@@ -343,6 +343,9 @@ if __name__ == "__main__":
         if use_large_dataset_flg:
             plots_save_path += "_large"
 
+        if run_reshuffled_flg:
+            plots_save_path += "_reshuffled"
+
     if save_plots_flag:
         if os.path.exists(plots_save_path):
             shutil.rmtree(plots_save_path)  # Remove existing plots directory
