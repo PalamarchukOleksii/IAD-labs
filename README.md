@@ -1,64 +1,67 @@
-# **Instructions on How to Use the Project**
+# IAD Labs Project
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/PalamarchukOleksii/IAD-labs.git
-   ```
+This repository contains several lab projects, each with its own Python scripts and dependencies.
 
-2. **Navigate to the project directory:**
-   ```bash
-   cd IAD-labs
-   ```
+## Getting Started
 
-3. **Create a virtual environment:**
-   ```bash
-   python -m venv .venv
-   ```
+Follow the instructions below to set up the project.
 
-4. **Activate the virtual environment:**
+### 1. Clone the Repository
 
-   - On **Windows**:
-     ```bash
-     .\.venv\Scripts\activate
-     ```
-   - On **macOS/Linux**:
-     ```bash
-     source .venv/bin/activate
-     ```
+```bash
+git clone https://github.com/PalamarchukOleksii/IAD-labs.git
+```
 
-5. **Install the required dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 2. Navigate to the Project Directory
 
-6. **Navigate to the specific project directory to run Python files:**
-   ```bash
-   cd lab1
-   ```
+```bash
+cd IAD-labs
+```
 
-7. **Run the Python script with the active virtual environment:**
-   ```bash
-   python gen1.py
-   ```
-   or
-   ```bash
-   python gen2.py
-   ```
-   *(Replace `1` or `2` with the specific version you want to run)*
+### 3. Create a Virtual Environment
 
-8. **To run Jupyter notebooks with the active virtual environment, use the command:**
-   ```bash
-   jupyter notebook
-   ```
-   
-   Jupyter Lab is also supported and can be started using:
-   ```bash
-   jupyter lab
-   ```
+```bash
+python -m venv .venv
+```
 
-9. **Deactivate the virtual environment when done:**
+### 4. Activate the Virtual Environment
 
-   - On **Windows, macOS, and Linux**:
-     ```bash
-     deactivate
-     ```
+- On **Windows**:
+  ```bash
+  .\.venv\Scripts\activate
+  ```
+- On **macOS/Linux**:
+  ```bash
+  source .venv/bin/activate
+  ```
+
+### 5. Install Dependencies
+
+Each lab has its own `requirements.txt` file. To install dependencies for a specific lab, navigate to that lab's folder and install its requirements.
+
+For example, for `lab1`:
+```bash
+cd lab1
+pip install -r requirements.txt
+```
+
+Repeat this for each lab as needed.
+
+### 6. Running the Scripts
+
+Navigate to the folder of the lab you wish to run and execute the desired Python script.
+
+For example, for `lab1`:
+```bash
+python lab1.py
+```
+
+Repeat this for other labs as needed.
+
+### 7. Deactivate the Virtual Environment
+
+Once you're done, deactivate the virtual environment:
+
+```bash
+deactivate
+```
