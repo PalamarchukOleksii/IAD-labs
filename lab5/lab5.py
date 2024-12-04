@@ -114,7 +114,7 @@ def evaluate_model(
     return accuracy
 
 
-def create_accuracies_plot(performance_data):
+def create_accuracies_plot(performance_data, save_plot=False, save_path='plots'):
     # Prepare the data for plotting
     individual_model_names = [score[0]
                               for score in performance_data["Individual Models"]]
@@ -137,8 +137,7 @@ def create_accuracies_plot(performance_data):
 
     # Plot base models with a fixed number of estimators (e.g., 1) on the x-axis
     for i, (name, accuracy) in enumerate(zip(individual_model_names, individual_model_accuracies)):
-        plt.scatter(1, accuracy, color=colors(
-            i), label=f"{name} {i+1}", s=100)
+        plt.scatter(1, accuracy, color=colors(i), label=f"{name} {i+1}", s=100)
 
     # Plot AdaBoost models with varying n_estimators on the x-axis
     for i, (name, accuracy) in enumerate(zip(adaboost_model_names, adaboost_accuracies)):
@@ -154,9 +153,16 @@ def create_accuracies_plot(performance_data):
     plt.legend(loc='upper left', bbox_to_anchor=(
         1, 1), fontsize=8, title="Model Names")
 
-    # Show the plot
+    # Tight layout to ensure no clipping
     plt.tight_layout()
-    plt.show()
+
+    # Save the plot if a save_path is provided
+    if save_plot:
+        plt.savefig(f"{save_path}/plot.png")
+        print(f"Plot saved to {save_path}")
+    else:
+        # Otherwise, show the plot
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -254,7 +260,7 @@ if __name__ == "__main__":
             print('\n')
 
     # Call the function to create the plot
-    create_accuracies_plot(performance_data)
+    create_accuracies_plot(performance_data, save_plots_flag, plots_save_path)
 
     if log_to_file_flag:
         log_file.close()
