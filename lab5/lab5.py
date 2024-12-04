@@ -15,6 +15,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
 
 
 TEST_SPLIT_RATIO = 0.2
@@ -90,6 +91,14 @@ def metrics_report(y_test, y_predict):
     class_report = classification_report(y_test, y_predict, zero_division=0)
     print('Classification report:')
     print(class_report)
+
+    mse = mean_squared_error(y_test, y_predict)
+    bias_squared = np.mean((y_predict - np.mean(y_test))**2)
+    variance = np.var(y_predict)
+
+    print(f"MSE: {mse}")
+    print(f"Bias^2: {bias_squared}")
+    print(f"Var: {variance}")
 
 
 def evaluate_model(
