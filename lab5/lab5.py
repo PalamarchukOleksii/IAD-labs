@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+import time
 
 import numpy as np
 import pandas as pd
@@ -111,7 +112,13 @@ def evaluate_model(
         x_validation,
         y_validation,
 ):
+    start_time = time.time()
+
     model.fit(x_train, y_train)
+
+    fit_time = time.time() - start_time
+
+    print("Fit time:", fit_time)
 
     y_pred = model.predict(x_test)
 
@@ -124,7 +131,6 @@ def evaluate_model(
 
 
 def create_accuracies_plot(performance_data, save_plot=False, save_path='plots'):
-    # Prepare the data for plotting
     individual_model_names = [score[0]
                               for score in performance_data["Individual Models"]]
     individual_model_accuracies = [score[1]
@@ -135,42 +141,32 @@ def create_accuracies_plot(performance_data, save_plot=False, save_path='plots')
     adaboost_accuracies = [score[1]
                            for score in performance_data["AdaBoost Models"]]
 
-    # Combine the model names and accuracies for plotting
     all_model_names = individual_model_names + adaboost_model_names
 
-    # Generate a list of unique colors (one for each model)
     colors = plt.cm.get_cmap('tab20', len(all_model_names))
 
-    # Create the plot
     plt.figure(figsize=(12, 6))
 
-    # Plot base models with a fixed number of estimators (e.g., 1) on the x-axis
     for i, (name, accuracy) in enumerate(zip(individual_model_names, individual_model_accuracies)):
         plt.scatter(1, accuracy, color=colors(i), label=f"{name} {i+1}", s=100)
 
-    # Plot AdaBoost models with varying n_estimators on the x-axis
     for i, (name, accuracy) in enumerate(zip(adaboost_model_names, adaboost_accuracies)):
         plt.scatter(name, accuracy, color=colors(
             i + len(individual_model_names)), label=f"AdaBoost {name}", s=100)
 
-    # Labels and Title
     plt.xlabel("Number of Estimators")
     plt.ylabel("Accuracy")
     plt.title("Model Performance Comparison (Accuracy vs Number of Estimators)")
 
-    # Adjust legend placement to make it more readable
     plt.legend(loc='upper left', bbox_to_anchor=(
         1, 1), fontsize=8, title="Model Names")
 
-    # Tight layout to ensure no clipping
     plt.tight_layout()
 
-    # Save the plot if a save_path is provided
     if save_plot:
         plt.savefig(f"{save_path}/plot.png")
-        print(f"Plot saved to {save_path}")
+        print(f"Plot saved to {save_path}/plot.png")
     else:
-        # Otherwise, show the plot
         plt.show()
 
 
