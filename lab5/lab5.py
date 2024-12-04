@@ -29,6 +29,64 @@ def load_dataset(filepath: str) -> pd.DataFrame:
     return df
 
 
+# Створення стовпчикових діаграм для всіх змінних як цільових
+    create_target_bar_charts(dataframe, target_col=TARGET_COL, save_path=plots_save_path)
+
+
+def create_target_bar_charts(df: pd.DataFrame, target_col: str, save_path='plots'):
+    """
+    Створює стовпчикові діаграми для кожної змінної як цільової.
+    :param df: DataFrame з даними.
+    :param target_col: Цільова колонка для розподілу.
+    :param save_path: Шлях для збереження графіків.
+    """
+    os.makedirs(save_path, exist_ok=True)
+
+    # Унікальні значення цільової змінної
+    target_values = df[target_col].unique()
+    if len(target_values) != 2:
+        raise ValueError("Цільова змінна має містити рівно 2 категорії для правильного відображення графіка.")
+
+    for col in df.columns:
+        if col == target_col:
+            continue
+
+        # Розрахунок кількостей для кожної категорії в колонці
+        grouped_data = df.groupby([col, target_col]).size().unstack(fill_value=0)
+
+        # Переконатися, що є два стовпчики (Malicious, Benign)
+        grouped_data = grouped_data.reindex(columns=target_values, fill_value=0)
+
+        # Створення графіка
+        ax = grouped_data.plot(
+            kind="bar",
+            stacked=True,
+            figsize=(12, 8),  # Збільшено розмір фігури
+            color=['salmon', 'skyblue'],
+            edgecolor='black'
+        )
+
+        # Оновлення осі x
+        plt.xticks(
+            ticks=range(len(grouped_data.index)),
+            labels=grouped_data.index.astype(str),
+            rotation=45,
+            ha='right'
+        )
+        plt.title(f"Розподіл {col} відносно {target_col}")
+        plt.xlabel(col)
+        plt.ylabel("Кількість")
+        plt.legend(title=target_col, labels=target_values)
+
+        # Налаштування полів для уникнення проблем із tight_layout
+        plt.subplots_adjust(bottom=0.3, top=0.9)
+
+        # Збереження графіка
+        file_name = f"Target_{col}.png"
+        plt.savefig(os.path.join(save_path, file_name))
+        plt.close()
+
+
 def separate_dataset(df: pd.DataFrame, test_size: float = 0.2, validation_size: float = 0.3, random_state: int = 42):
     # Split into train and test
     train_df, test_df = train_test_split(
@@ -143,16 +201,16 @@ def create_accuracies_plot(performance_data, save_plot=False, save_path='plots')
 
     all_model_names = individual_model_names + adaboost_model_names
 
-    colors = plt.cm.get_cmap('tab20', len(all_model_names))
+    colors = plt.colormaps['tab20'](np.linspace(0, 1, len(all_model_names)))
 
     plt.figure(figsize=(12, 6))
 
     for i, (name, accuracy) in enumerate(zip(individual_model_names, individual_model_accuracies)):
-        plt.scatter(1, accuracy, color=colors(i), label=f"{name} {i+1}", s=100)
+        plt.scatter(1, accuracy, color=colors[i], label=f"{name} {i + 1}", s=100)
 
     for i, (name, accuracy) in enumerate(zip(adaboost_model_names, adaboost_accuracies)):
-        plt.scatter(name, accuracy, color=colors(
-            i + len(individual_model_names)), label=f"AdaBoost {name}", s=100)
+        plt.scatter(len(individual_model_names) + i, accuracy, color=colors[i + len(individual_model_names)],
+                    label=f"AdaBoost {name}", s=100)
 
     plt.xlabel("Number of Estimators")
     plt.ylabel("Accuracy")
@@ -196,6 +254,11 @@ if __name__ == "__main__":
 
     # Load the dataset
     dataframe = load_dataset("dataset_Malicious_and_Benign_Websites.csv")
+
+    # Plot the dataset
+    create_target_bar_charts(dataframe, target_col=TARGET_COL, save_path=plots_save_path)
+
+    # Prepare the dataset
     dataframe = preprocess_data(dataframe)
 
     # Split into train, test and validation df`s
