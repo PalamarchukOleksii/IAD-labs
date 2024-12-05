@@ -17,29 +17,21 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
-
+from sklearn.decomposition import PCA
+from sklearn.inspection import DecisionBoundaryDisplay
+from sklearn.pipeline import Pipeline
 
 TEST_SPLIT_RATIO = 0.2
 VALIDATION_SPLIT_RATIO = 0.3
 TARGET_COL = "Type"
 
 
-def load_dataset(filepath: str) -> pd.DataFrame:
+def load_dataset(filepath: str, sh) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     return df
 
 
-# Створення стовпчикових діаграм для всіх змінних як цільових
-    create_target_bar_charts(dataframe, target_col=TARGET_COL, save_path=plots_save_path)
-
-
 def create_target_bar_charts(df: pd.DataFrame, target_col: str, save_path='plots'):
-    """
-    Створює стовпчикові діаграми для кожної змінної як цільової.
-    :param df: DataFrame з даними.
-    :param target_col: Цільова колонка для розподілу.
-    :param save_path: Шлях для збереження графіків.
-    """
     os.makedirs(save_path, exist_ok=True)
 
     # Унікальні значення цільової змінної
@@ -152,7 +144,7 @@ def metrics_report(y_test, y_predict):
     print(class_report)
 
     mse = mean_squared_error(y_test, y_predict)
-    bias_squared = np.mean((y_predict - np.mean(y_test))**2)
+    bias_squared = np.mean((y_predict - np.mean(y_test)) ** 2)
     variance = np.var(y_predict)
 
     print(f"MSE: {mse}")
@@ -205,10 +197,10 @@ def create_accuracies_plot(performance_data, save_plot=False, save_path='plots')
 
     plt.figure(figsize=(12, 6))
 
-    for i, (name, accuracy) in enumerate(zip(individual_model_names, individual_model_accuracies)):
+    for i, (name, model, accuracy) in enumerate(zip(individual_model_names, [], individual_model_accuracies)):
         plt.scatter(1, accuracy, color=colors[i], label=f"{name} {i + 1}", s=100)
 
-    for i, (name, accuracy) in enumerate(zip(adaboost_model_names, adaboost_accuracies)):
+    for i, (name, model, accuracy) in enumerate(zip(adaboost_model_names, [], adaboost_accuracies)):
         plt.scatter(len(individual_model_names) + i, accuracy, color=colors[i + len(individual_model_names)],
                     label=f"AdaBoost {name}", s=100)
 
@@ -228,8 +220,46 @@ def create_accuracies_plot(performance_data, save_plot=False, save_path='plots')
         plt.show()
 
 
-if __name__ == "__main__":
+def plot_decision_boundary_helper(x, y, model, x_label, y_label, title, filename='decision_boundary.png',
+                                  save_plot=True, save_path='plots', show_plot=False):
+    plt.figure(figsize=(8, 6))
+    x0, x1 = x[:, 0], x[:, 1]
 
+    # Plot decision boundary
+    DecisionBoundaryDisplay.from_estimator(
+        model,
+        x,
+        response_method="predict",
+        cmap='coolwarm',
+        alpha=0.75,
+        ax=plt.gca(),
+        xlabel=x_label,
+        ylabel=y_label
+    )
+    plt.scatter(x0, x1, c=y, cmap='coolwarm', edgecolors="k")
+    plt.title(title)
+
+    if save_plot:
+        os.makedirs(save_path, exist_ok=True)
+        save_file = os.path.join(save_path, filename)
+        plt.savefig(save_file)
+        print(f"Plot saved at: {save_file}")
+
+    if show_plot:
+        plt.show()
+    plt.close()
+
+
+def create_decision_boundary(x_train, y_train, model, model_name):
+    # Plot the decision boundary using the original 20-feature dataset
+    plot_decision_boundary_helper(x_train, y_train, model, "Feature 1", "Feature 2",
+                                  f"Decision Boundary {model_name}",
+                                  f"decision_boundary_{model_name}.png")
+
+
+if __name__ == "__main__":
+    reduce_dimensions = True
+    plot_dataset = False
     run_grid_search_flg = True
     log_to_file_flag = False
     log_path = "output_log.txt"
@@ -255,8 +285,8 @@ if __name__ == "__main__":
     # Load the dataset
     dataframe = load_dataset("dataset_Malicious_and_Benign_Websites.csv")
 
-    # Plot the dataset
-    create_target_bar_charts(dataframe, target_col=TARGET_COL, save_path=plots_save_path)
+    if plot_dataset:
+        create_target_bar_charts(dataframe, target_col=TARGET_COL, save_path=plots_save_path)
 
     # Prepare the dataset
     dataframe = preprocess_data(dataframe)
@@ -269,6 +299,12 @@ if __name__ == "__main__":
     X_test, y_test = separate_features_and_labels(test, TARGET_COL)
     X_validation, y_validation = separate_features_and_labels(
         validation, TARGET_COL)
+
+    if reduce_dimensions:
+        pca = PCA(n_components=2)
+        X_train = pca.fit_transform(X_train)
+        X_test = pca.transform(X_test)
+        X_validation = pca.transform(X_validation)
 
     # Define base estimators
     base_estimators = [
@@ -309,8 +345,7 @@ if __name__ == "__main__":
         for est in base_estimators:
             print("-" * 40)
             model = est["model"]
-            model_name = f"AdaBoost_{est['name']}_{param['n_estimators']}_{
-                param['learning_rate']}_{param['algorithm']}"
+            model_name = f"AdaBoost_{est['name']}_{param['n_estimators']}_{param['learning_rate']}_{param['algorithm']}"
 
             # Create AdaBoost classifier with specific parameters
             adaboost = AdaBoostClassifier(estimator=est["model"],
@@ -323,12 +358,20 @@ if __name__ == "__main__":
             accuracy = evaluate_model(
                 adaboost, model_name, X_train, y_train, X_test, y_test, X_validation, y_validation)
             performance_data["AdaBoost Models"].append(
-                (model_name, accuracy))
+                (model_name, adaboost, accuracy))
             print("-" * 40)
             print('\n')
+            create_decision_boundary(X_train, y_train, adaboost, model_name)
 
     # Call the function to create the plot
     create_accuracies_plot(performance_data, save_plots_flag, plots_save_path)
+    print("\nRunning best model on validation set.\n")
+    best_model = max(performance_data["AdaBoost Models"], key=lambda x: x[2])
+    best_model_name, best_model, best_accuracy = best_model
+    print(f"Model name: {best_model_name}")
+    y_pred = best_model.predict(X_validation)
+    # Print the metrics
+    metrics_report(y_validation, y_pred)
 
     if log_to_file_flag:
         log_file.close()
