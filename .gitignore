@@ -168,3 +168,5 @@ cython_debug/
 # Custom ignored files
 plots
 output_log.txt
+
+.vscode

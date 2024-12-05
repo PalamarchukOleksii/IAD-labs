@@ -312,12 +312,12 @@ def GridSearch(X, combinations):
 
 
 if __name__ == "__main__":
-    # dataset_id_for_use = DATASET_CIRCLES_ID
-    dataset_id_for_use = DATASET_BLOBS_ID
+    dataset_id_for_use = DATASET_CIRCLES_ID
+    # dataset_id_for_use = DATASET_BLOBS_ID
 
-    use_large_dataset_flg = True
-    run_reshuffled_flg = True
-    run_grid_search_flg = True
+    use_large_dataset_flg = False
+    run_reshuffled_flg = False
+    run_grid_search_flg = False
 
     log_to_file_flag = False
     log_path = "output_log.txt"
