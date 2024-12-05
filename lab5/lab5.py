@@ -181,39 +181,41 @@ def evaluate_model(
 
 
 def create_accuracies_plot(performance_data, save_plot=False, save_path='plots'):
-    individual_model_names = [score[0]
-                              for score in performance_data["Individual Models"]]
-    individual_model_accuracies = [score[1]
-                                   for score in performance_data["Individual Models"]]
+    # Extracting data for individual models
+    individual_model_names = [score[0] for score in performance_data["Individual Models"]]
+    individual_model_accuracies = [score[1] for score in performance_data["Individual Models"]]
 
-    adaboost_model_names = [score[0]
-                            for score in performance_data["AdaBoost Models"]]
-    adaboost_accuracies = [score[1]
-                           for score in performance_data["AdaBoost Models"]]
+    # Extracting data for AdaBoost models
+    adaboost_model_names = [score[0] for score in performance_data["AdaBoost Models"]]
+    adaboost_accuracies = [score[2] for score in performance_data["AdaBoost Models"]]  # Accuracy is now the 3rd element
 
+    # Combine all model names for consistent color mapping
     all_model_names = individual_model_names + adaboost_model_names
 
     colors = plt.colormaps['tab20'](np.linspace(0, 1, len(all_model_names)))
 
     plt.figure(figsize=(12, 6))
 
-    for i, (name, model, accuracy) in enumerate(zip(individual_model_names, [], individual_model_accuracies)):
+    # Plot individual models
+    for i, (name, accuracy) in enumerate(zip(individual_model_names, individual_model_accuracies)):
         plt.scatter(1, accuracy, color=colors[i], label=f"{name} {i + 1}", s=100)
 
-    for i, (name, model, accuracy) in enumerate(zip(adaboost_model_names, [], adaboost_accuracies)):
-        plt.scatter(len(individual_model_names) + i, accuracy, color=colors[i + len(individual_model_names)],
+    # Plot AdaBoost models
+    for i, (name, accuracy) in enumerate(zip(adaboost_model_names, adaboost_accuracies)):
+        plt.scatter(len(individual_model_names) + i, accuracy,
+                    color=colors[i + len(individual_model_names)],
                     label=f"AdaBoost {name}", s=100)
 
-    plt.xlabel("Number of Estimators")
+    # Customize plot
+    plt.xlabel("Model Index")
     plt.ylabel("Accuracy")
     plt.title("Model Performance Comparison (Accuracy vs Number of Estimators)")
 
-    plt.legend(loc='upper left', bbox_to_anchor=(
-        1, 1), fontsize=8, title="Model Names")
-
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, title="Model Names")
     plt.tight_layout()
 
     if save_plot:
+        os.makedirs(save_path, exist_ok=True)
         plt.savefig(f"{save_path}/plot.png")
         print(f"Plot saved to {save_path}/plot.png")
     else:
