@@ -258,7 +258,7 @@ def create_decision_boundary(x_train, y_train, model, model_name):
 
 
 if __name__ == "__main__":
-    reduce_dimensions = True
+    reduce_dimensions = False
     plot_dataset = False
     run_grid_search_flg = True
     log_to_file_flag = False
@@ -312,9 +312,10 @@ if __name__ == "__main__":
             max_depth=2, random_state=42), "name": "DecisionTreeClassifier_depth2"},
         {"model": DecisionTreeClassifier(
             max_depth=3, random_state=42), "name": "DecisionTreeClassifier_depth3"},
-        {"model": SVC(probability=True, kernel='linear',
-                      random_state=42), "name": "SVC_Linear"}
     ]
+    if not reduce_dimensions:
+        base_estimators.append({"model": SVC(probability=True, kernel='linear',
+                                             random_state=42), "name": "SVC_Linear"})
 
     # Define parameter sets
     params = [
@@ -361,7 +362,8 @@ if __name__ == "__main__":
                 (model_name, adaboost, accuracy))
             print("-" * 40)
             print('\n')
-            create_decision_boundary(X_train, y_train, adaboost, model_name)
+            if reduce_dimensions:
+                create_decision_boundary(X_train, y_train, adaboost, model_name)
 
     # Call the function to create the plot
     create_accuracies_plot(performance_data, save_plots_flag, plots_save_path)
