@@ -26,7 +26,7 @@ VALIDATION_SPLIT_RATIO = 0.3
 TARGET_COL = "Type"
 
 
-def load_dataset(filepath: str, sh) -> pd.DataFrame:
+def load_dataset(filepath: str) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     return df
 
